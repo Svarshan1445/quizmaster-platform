@@ -68,19 +68,6 @@
 
 ---
 
-## 🔑 Default Credentials
-
-### 🛡️ Admin Portal
-- **Email**: `admin@quiz.com` (or `admin@quizmaster.com`)
-- **Password**: `admin123`
-
-### 🎓 Student Portal
-- **Email**: `rahul@student.com`
-- **Password**: `Student@123`
-- *(Or click **Register** to create a new Student account)*
-
----
-
 ## 📁 Repository Directory Structure
 
 ```
