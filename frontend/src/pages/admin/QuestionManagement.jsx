@@ -23,6 +23,7 @@ export default function QuestionManagement({ quizId, onBack }) {
   const [aiTopic, setAiTopic] = useState('');
   const [aiCount, setAiCount] = useState(5);
   const [aiDifficulty, setAiDifficulty] = useState('Intermediate');
+  const [aiQuestionType, setAiQuestionType] = useState('MIXED'); // 'MIXED' | 'MCQ' | 'TRUE_FALSE' | 'FILL_BLANK'
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState('');
   const [aiGenerated, setAiGenerated] = useState([]); // preview questions
@@ -288,7 +289,8 @@ export default function QuestionManagement({ quizId, onBack }) {
       const res = await api.post('/ai/generate-questions', {
         topic: aiTopic.trim(),
         count: aiCount,
-        difficulty: aiDifficulty
+        difficulty: aiDifficulty,
+        questionType: aiQuestionType
       });
       setAiGenerated(res.data.questions);
     } catch (err) {
@@ -305,7 +307,7 @@ export default function QuestionManagement({ quizId, onBack }) {
       try {
         await api.post(`/quizzes/${quizId}/questions`, {
           question_text: q.question_text,
-          question_type: 'MCQ',
+          question_type: q.question_type || 'MCQ',
           marks: q.marks || 2,
           explanation: q.explanation || '',
           difficulty: q.difficulty || aiDifficulty,
@@ -773,8 +775,21 @@ export default function QuestionManagement({ quizId, onBack }) {
                   />
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Question Type</label>
+                    <select
+                      value={aiQuestionType}
+                      onChange={e => setAiQuestionType(e.target.value)}
+                      className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 font-medium"
+                    >
+                      <option value="MIXED">✨ Mixed (MCQ + True/False + Blank)</option>
+                      <option value="MCQ">Multiple Choice (MCQ)</option>
+                      <option value="TRUE_FALSE">True / False</option>
+                      <option value="FILL_BLANK">Fill in the Blanks</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Number of Questions</label>
                     <select
                       value={aiCount}
@@ -784,7 +799,7 @@ export default function QuestionManagement({ quizId, onBack }) {
                       {[3, 5, 7, 10, 15, 20].map(n => <option key={n} value={n}>{n} Questions</option>)}
                     </select>
                   </div>
-                  <div className="flex-1">
+                  <div>
                     <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficulty</label>
                     <select
                       value={aiDifficulty}
@@ -831,7 +846,10 @@ export default function QuestionManagement({ quizId, onBack }) {
                   {aiGenerated.map((q, qi) => (
                     <div key={qi} className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <span className="text-xs font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full shrink-0">Q{qi + 1}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full shrink-0">Q{qi + 1}</span>
+                          {getTypeBadge(q.question_type)}
+                        </div>
                         <button onClick={() => removeAIQuestion(qi)} className="text-slate-500 hover:text-rose-400 transition shrink-0">
                           <X className="w-4 h-4" />
                         </button>

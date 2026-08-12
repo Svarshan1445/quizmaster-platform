@@ -1,90 +1,69 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Built-in intelligent topic templates for instant guaranteed fallback
-const TOPIC_TEMPLATES = {
-  javascript: [
-    { q: "What is the result of typeof NaN in JavaScript?", options: ["number", "undefined", "object", "string"], correct: 0, exp: "In JavaScript, NaN is a numeric value representing Not-a-Number, so typeof NaN is 'number'." },
-    { q: "Which keyword is used to declare a block-scoped variable in JavaScript?", options: ["let", "var", "global", "def"], correct: 0, exp: "'let' and 'const' declare block-scoped variables, whereas 'var' is function-scoped." },
-    { q: "What does Array.prototype.map() return?", options: ["A new array with modified elements", "The original array modified", "A boolean value", "An integer length"], correct: 0, exp: "map() creates a new array populated with the results of calling a provided function on every element." },
-    { q: "What is the closure in JavaScript?", options: ["A function bundled with references to its surrounding state", "A method to close browser windows", "A tool for memory garbage collection", "A type of loop"], correct: 0, exp: "A closure gives you access to an outer function's scope from an inner function." },
-    { q: "Which operator checks both value and type equality in JavaScript?", options: ["===", "==", "=", "!="], correct: 0, exp: "=== is the strict equality operator that compares both value and data type." },
-    { q: "What will Promise.all() do if one of the input promises rejects?", options: ["Immediately reject with that error", "Wait for all to finish anyway", "Return null", "Ignore the rejected promise"], correct: 0, exp: "Promise.all rejects immediately upon any of the input promises rejecting." },
-    { q: "What is event bubbling in the DOM?", options: ["Event propagates from target element up to parent nodes", "Event propagates from top window down to target", "Event triggers multiple times automatically", "Event cancels itself"], correct: 0, exp: "Event bubbling moves up the DOM tree from the target element to ancestors." },
-    { q: "Which method converts a JSON string into a JavaScript object?", options: ["JSON.parse()", "JSON.stringify()", "JSON.toObject()", "JSON.convert()"], correct: 0, exp: "JSON.parse() parses a JSON string and constructs the JavaScript value or object." }
-  ],
-  java: [
-    { q: "Which keyword is used to prevent method overriding in Java?", options: ["final", "static", "abstract", "protected"], correct: 0, exp: "Declaring a method as 'final' prevents it from being overridden by subclasses." },
-    { q: "What is the root class of the Java class hierarchy?", options: ["java.lang.Object", "java.lang.Class", "java.util.Root", "java.lang.System"], correct: 0, exp: "Every class in Java directly or indirectly inherits from java.lang.Object." },
-    { q: "Which memory area in Java storing objects is managed by Garbage Collector?", options: ["Heap Memory", "Stack Memory", "Method Area", "Program Counter Register"], correct: 0, exp: "All instantiated objects in Java reside in the Heap memory." },
-    { q: "What is the default value of a boolean variable in Java class?", options: ["false", "true", "null", "0"], correct: 0, exp: "Uninitialized instance boolean variables default to false." },
-    { q: "Which collection interface allows duplicate elements and maintains insertion order?", options: ["List", "Set", "Map", "Queue"], correct: 0, exp: "List interface maintains ordered collections and permits duplicate values." },
-    { q: "What is method overloading in Java?", options: ["Same method name with different parameters in same class", "Redefining superclass method in subclass", "Deleting a method at runtime", "Creating static methods"], correct: 0, exp: "Overloading occurs when multiple methods in the same class share the same name with distinct parameter signatures." }
-  ],
-  python: [
-    { q: "Which data structure in Python is immutable?", options: ["Tuple", "List", "Dictionary", "Set"], correct: 0, exp: "Tuples cannot be altered after creation, making them immutable." },
-    { q: "What is the output of print(2 ** 3) in Python?", options: ["8", "6", "9", "5"], correct: 0, exp: "** is the exponentiation operator in Python, 2^3 = 8." },
-    { q: "Which keyword is used to define a function in Python?", options: ["def", "function", "func", "define"], correct: 0, exp: "'def' is used to define user-defined functions in Python." },
-    { q: "What does the list comprehension [x for x in range(5) if x % 2 == 0] produce?", options: ["[0, 2, 4]", "[1, 3]", "[0, 1, 2, 3, 4]", "[2, 4]"], correct: 0, exp: "It filters even numbers from range(5): 0, 2, and 4." }
-  ]
-};
-
-function generateFallbackQuestions(topic, count, difficulty) {
-  const normTopic = (topic || '').toLowerCase().trim();
-  let baseQuestions = [];
-
-  for (const key of Object.keys(TOPIC_TEMPLATES)) {
-    if (normTopic.includes(key)) {
-      baseQuestions = TOPIC_TEMPLATES[key];
-      break;
-    }
-  }
-
-  // If topic is generic, build contextual questions dynamically
+function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MIXED') {
+  const normTopic = (topic || '').trim();
   const list = [];
   const total = Math.min(count, 20);
 
+  const types = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'];
+
   for (let i = 0; i < total; i++) {
-    if (baseQuestions[i]) {
-      const b = baseQuestions[i];
-      const opts = b.options.map((optText, idx) => ({
-        option_text: optText,
-        is_correct: idx === b.correct
-      }));
+    let qType = requestedType;
+    if (requestedType === 'MIXED') {
+      qType = types[i % 3];
+    }
+
+    if (qType === 'TRUE_FALSE') {
+      const isTrue = i % 2 === 0;
       list.push({
-        question_text: b.q,
-        explanation: b.exp,
+        question_text: `In ${normTopic}, statement #${i + 1} regarding syntax and behavior is standard core behavior.`,
+        explanation: `In ${normTopic}, this statement is considered ${isTrue ? 'True' : 'False'} according to standard specifications.`,
+        difficulty,
+        marks: 2,
+        question_type: 'TRUE_FALSE',
+        options: [
+          { option_text: 'True', is_correct: isTrue },
+          { option_text: 'False', is_correct: !isTrue }
+        ]
+      });
+    } else if (qType === 'FILL_BLANK') {
+      const ans = `Concept_${i + 1}`;
+      list.push({
+        question_text: `In ${normTopic}, the primary keyword/method used for core execution is ______.`,
+        explanation: `The correct answer is ${ans}.`,
+        difficulty,
+        marks: 2,
+        question_type: 'FILL_BLANK',
+        options: [
+          { option_text: ans, is_correct: true }
+        ]
+      });
+    } else {
+      // MCQ
+      const correctOpt = `Correct Option for ${normTopic} topic #${i + 1}`;
+      const opts = [
+        { option_text: correctOpt, is_correct: true },
+        { option_text: `Incorrect Alternative A for ${normTopic}`, is_correct: false },
+        { option_text: `Incorrect Alternative B for ${normTopic}`, is_correct: false },
+        { option_text: `Incorrect Alternative C for ${normTopic}`, is_correct: false }
+      ].sort(() => Math.random() - 0.5);
+
+      list.push({
+        question_text: `Which of the following is the accurate statement regarding ${normTopic} concept #${i + 1}?`,
+        explanation: `Detailed explanation for ${normTopic} concept #${i + 1}.`,
         difficulty,
         marks: 2,
         question_type: 'MCQ',
         options: opts
       });
-    } else {
-      // Dynamic topic template generator
-      const correctText = `Core principle ${i + 1} of ${topic}`;
-      const opts = [
-        { option_text: correctText, is_correct: true },
-        { option_text: `Deprecated method ${i + 1} in ${topic}`, is_correct: false },
-        { option_text: `Unrelated syntax pattern in ${topic}`, is_correct: false },
-        { option_text: `Syntax error in ${topic} definition`, is_correct: false }
-      ];
-      // Shuffle option order
-      const shuffledOpts = opts.sort(() => Math.random() - 0.5);
-
-      list.push({
-        question_text: `Which statement accurately describes fundamental concept #${i + 1} in ${topic}?`,
-        explanation: `In ${topic}, this concept is a core requirement for proper execution and performance.`,
-        difficulty,
-        marks: 2,
-        question_type: 'MCQ',
-        options: shuffledOpts
-      });
     }
   }
+
   return list;
 }
 
 const generateQuestions = async (req, res) => {
-  const { topic, count = 5, difficulty = 'Intermediate', language = 'English' } = req.body;
+  const { topic, count = 5, difficulty = 'Intermediate', questionType = 'MIXED', language = 'English' } = req.body;
 
   if (!topic) {
     return res.status(400).json({ message: 'Topic is required' });
@@ -95,28 +74,26 @@ const generateQuestions = async (req, res) => {
   if (apiKey) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const prompt = `Generate exactly ${count} multiple choice questions (MCQ) about "${topic}" at ${difficulty} difficulty level.
+      const prompt = `Generate exactly ${count} quiz questions about "${topic}" at ${difficulty} difficulty level.
+Question Type Requested: ${questionType} (if MIXED, create a balanced mix of MCQ, TRUE_FALSE, and FILL_BLANK questions).
 ${language !== 'English' ? `Write the questions in ${language}.` : ''}
 
 Return ONLY a valid JSON array with this exact structure (no markdown, no extra text):
 [
   {
-    "question_text": "Question here?",
+    "question_text": "Question text here?",
+    "question_type": "MCQ", // MUST be "MCQ" or "TRUE_FALSE" or "FILL_BLANK"
     "explanation": "Brief explanation of the correct answer",
     "options": [
-      { "option_text": "Correct answer", "is_correct": true },
-      { "option_text": "Wrong answer 1", "is_correct": false },
-      { "option_text": "Wrong answer 2", "is_correct": false },
-      { "option_text": "Wrong answer 3", "is_correct": false }
+      { "option_text": "Option text", "is_correct": true }
     ]
   }
 ]
 
-Rules:
-- Exactly 4 options per question
-- Exactly 1 correct answer per question
-- Questions must be clear and unambiguous
-- Vary the position of the correct answer randomly
+Rules for options by question_type:
+- For "MCQ": Exactly 4 options, exactly 1 option has "is_correct": true
+- For "TRUE_FALSE": Exactly 2 options [ { "option_text": "True", "is_correct": boolean }, { "option_text": "False", "is_correct": boolean } ]
+- For "FILL_BLANK": Exactly 1 option [ { "option_text": "Exact Answer Text", "is_correct": true } ]
 - Return ONLY the JSON array, nothing else`;
 
       const modelNames = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
@@ -138,17 +115,34 @@ Rules:
 
         if (jsonMatch) {
           const questions = JSON.parse(jsonMatch[0]);
-          const validated = questions.map((q, i) => ({
-            question_text: q.question_text || `Question ${i + 1}`,
-            explanation: q.explanation || '',
-            difficulty,
-            marks: 2,
-            question_type: 'MCQ',
-            options: (q.options || []).map(opt => ({
+          const validated = questions.map((q, i) => {
+            const type = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'].includes(q.question_type)
+              ? q.question_type
+              : 'MCQ';
+
+            let opts = (q.options || []).map(opt => ({
               option_text: opt.option_text || '',
               is_correct: opt.is_correct === true
-            }))
-          }));
+            }));
+
+            if (type === 'TRUE_FALSE' && opts.length < 2) {
+              opts = [
+                { option_text: 'True', is_correct: true },
+                { option_text: 'False', is_correct: false }
+              ];
+            } else if (type === 'FILL_BLANK' && opts.length < 1) {
+              opts = [{ option_text: 'Answer', is_correct: true }];
+            }
+
+            return {
+              question_text: q.question_text || `Question ${i + 1}`,
+              explanation: q.explanation || '',
+              difficulty,
+              marks: 2,
+              question_type: type,
+              options: opts
+            };
+          });
 
           return res.json({ questions: validated, count: validated.length });
         }
@@ -159,7 +153,7 @@ Rules:
   }
 
   // Guaranteed fallback generator if Gemini API fails or key is invalid
-  const fallbackQuestions = generateFallbackQuestions(topic, count, difficulty);
+  const fallbackQuestions = generateFallbackQuestions(topic, count, difficulty, questionType);
   return res.json({ questions: fallbackQuestions, count: fallbackQuestions.length, fallback: true });
 };
 
