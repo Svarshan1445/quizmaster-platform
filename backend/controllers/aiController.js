@@ -14,33 +14,25 @@ const generateQuestions = async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    let result;
+    const modelNames = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    let lastError = null;
 
-    const prompt = `Generate exactly ${count} multiple choice questions (MCQ) about "${topic}" at ${difficulty} difficulty level.
-${language !== 'English' ? `Write the questions in ${language}.` : ''}
+    for (const modelName of modelNames) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        result = await model.generateContent(prompt);
+        if (result && result.response) break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`Model ${modelName} failed, trying next model:`, err.message);
+      }
+    }
 
-Return ONLY a valid JSON array with this exact structure (no markdown, no extra text):
-[
-  {
-    "question_text": "Question here?",
-    "explanation": "Brief explanation of the correct answer",
-    "options": [
-      { "option_text": "Correct answer", "is_correct": true },
-      { "option_text": "Wrong answer 1", "is_correct": false },
-      { "option_text": "Wrong answer 2", "is_correct": false },
-      { "option_text": "Wrong answer 3", "is_correct": false }
-    ]
-  }
-]
+    if (!result || !result.response) {
+      throw lastError || new Error('All Gemini model generation attempts failed.');
+    }
 
-Rules:
-- Exactly 4 options per question
-- Exactly 1 correct answer per question
-- Questions must be clear and unambiguous
-- Vary the position of the correct answer randomly
-- Return ONLY the JSON array, nothing else`;
-
-    const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
 
     // Extract JSON from response
