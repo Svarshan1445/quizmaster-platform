@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MIXED') {
   const normTopic = (topic || '').trim();
   const list = [];
-  const total = Math.min(count, 20);
+  const total = Math.min(Math.max(1, parseInt(count, 10) || 5), 50);
 
   const types = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'CODING'];
 

@@ -797,14 +797,33 @@ export default function QuestionManagement({ quizId, onBack }) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Number of Questions</label>
-                    <select
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Number of Questions (Custom)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
                       value={aiCount}
-                      onChange={e => setAiCount(Number(e.target.value))}
-                      className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
-                    >
-                      {[3, 5, 7, 10, 15, 20].map(n => <option key={n} value={n}>{n} Questions</option>)}
-                    </select>
+                      onChange={e => setAiCount(Math.max(1, Math.min(50, parseInt(e.target.value, 10) || 1)))}
+                      className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white font-bold focus:outline-none focus:border-violet-500"
+                      placeholder="Enter count (1-50)"
+                    />
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-[10px] text-slate-500 font-semibold uppercase">Presets:</span>
+                      {[5, 10, 15, 25, 50].map(n => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setAiCount(n)}
+                          className={`text-[11px] px-2 py-0.5 rounded-md font-bold transition ${
+                            aiCount === n
+                              ? 'bg-violet-600 text-white'
+                              : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficulty</label>
