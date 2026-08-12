@@ -109,6 +109,41 @@ function initDb() {
   migrations.forEach(sql => {
     try { db.exec(sql); } catch (e) { /* Column already exists or handled */ }
   });
+
+  // Automatic persistent seeding for categories & admin account
+  try {
+    const bcrypt = require('bcryptjs');
+    const adminPass = bcrypt.hashSync('admin123', 10);
+    
+    // Seed Admin Accounts
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'ADMIN', 'ACTIVE')`)
+      .run('System Administrator', 'admin@quiz.com', adminPass);
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'ADMIN', 'ACTIVE')`)
+      .run('System Administrator', 'admin@quizmaster.com', adminPass);
+
+    // Seed Standard Categories
+    const categories = [
+      ['JavaScript', 'Core JS concepts, ES6+, async programming, and scope', 'Code'],
+      ['React.js', 'Components, hooks, state management, and virtual DOM', 'Atom'],
+      ['Python', 'Python syntax, data structures, OOP, and modules', 'Terminal'],
+      ['Java', 'Core Java, OOP, collections, threads, and JVM', 'Coffee'],
+      ['C++', 'C++ pointers, memory management, OOP, and STL', 'Code2'],
+      ['Database Systems', 'SQL queries, relational modeling, indexes, and transactions', 'Database'],
+      ['Data Structures & Algorithms', 'Arrays, linked lists, trees, graphs, sorting, and dynamic programming', 'Cpu'],
+      ['Computer Networks', 'OSI model, TCP/IP, HTTP/HTTPS, DNS, and IP routing', 'Network'],
+      ['Cyber Security', 'Web security, XSS, CSRF, authentication, and encryption', 'ShieldCheck'],
+      ['Web Development', 'HTML5, CSS3, Flexbox, Grid, and responsive web design', 'Globe']
+    ];
+
+    const insertCat = db.prepare(`INSERT OR IGNORE INTO categories (name, description, icon) VALUES (?, ?, ?)`);
+    categories.forEach(([name, desc, icon]) => {
+      insertCat.run(name, desc, icon);
+    });
+
+    console.log('✓ Essential categories and admin accounts verified.');
+  } catch (err) {
+    console.warn('Auto-seeding warning:', err.message);
+  }
 }
 
 initDb();
