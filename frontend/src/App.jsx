@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import RoleSelect from './pages/RoleSelect';
 
 // Student Pages
 import StudentDashboard from './pages/StudentDashboard';
@@ -24,7 +25,8 @@ import AdminAttempts from './pages/admin/AdminAttempts';
 
 function MainApp() {
   const { user, loading, isAdmin } = useAuth();
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  const [authMode, setAuthMode] = useState('roleselect'); // 'roleselect' | 'login' | 'register'
+  const [selectedRole, setSelectedRole] = useState(null); // 'admin' | 'student'
   
   // Navigation State
   const [activePage, setActivePage] = useState('student-dashboard');
@@ -83,10 +85,23 @@ function MainApp() {
 
   // Auth Guard
   if (!user) {
-    return authMode === 'login' ? (
-      <Login onSwitchToRegister={() => setAuthMode('register')} />
-    ) : (
-      <Register onSwitchToLogin={() => setAuthMode('login')} />
+    if (authMode === 'roleselect') {
+      return (
+        <RoleSelect
+          onSelectAdmin={() => { setSelectedRole('admin'); setAuthMode('login'); }}
+          onSelectStudent={() => { setSelectedRole('student'); setAuthMode('login'); }}
+        />
+      );
+    }
+    if (authMode === 'register') {
+      return <Register onSwitchToLogin={() => setAuthMode('login')} />;
+    }
+    return (
+      <Login
+        role={selectedRole}
+        onSwitchToRegister={() => setAuthMode('register')}
+        onBack={() => setAuthMode('roleselect')}
+      />
     );
   }
 

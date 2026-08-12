@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Award, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, AlertCircle, ArrowLeft, CheckCircle } from 'lucide-react';
 
-export default function Login({ onSwitchToRegister }) {
+export default function Login({ onSwitchToRegister, onBack, role }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -145,13 +145,36 @@ export default function Login({ onSwitchToRegister }) {
 
       <div className="relative w-full max-w-md bg-slate-900/80 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
 
+        {/* Back Button */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white mb-6 transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back to Role Selection
+          </button>
+        )}
+
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-500/30">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg ${
+            role === 'admin'
+              ? 'bg-gradient-to-tr from-indigo-500 to-violet-600 shadow-indigo-500/30'
+              : 'bg-gradient-to-tr from-emerald-500 to-teal-600 shadow-emerald-500/30'
+          }`}>
             <Award className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome Back</h1>
-          <p className="text-sm text-slate-400 mt-1">Sign in to QuizMaster Assessment Platform</p>
+          <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-3 ${
+            role === 'admin'
+              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+          }`}>
+            {role === 'admin' ? <ShieldCheck className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
+            {role === 'admin' ? 'Admin Login' : 'Student Login'}
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'Times New Roman, serif' }}>Welcome Back</h1>
+          <p className="text-sm text-slate-400 mt-1" style={{ fontFamily: 'Times New Roman, serif' }}>Sign in to QuizMaster Assessment Platform</p>
         </div>
 
         {error && (
