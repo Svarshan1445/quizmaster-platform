@@ -12,6 +12,7 @@ const attemptRoutes = require('./routes/attemptRoutes');
 const userRoutes = require('./routes/userRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -33,6 +34,7 @@ app.use('/api/attempts', attemptRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', analyticsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

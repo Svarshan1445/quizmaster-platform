@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import api from '../../services/api';
 import { 
   HelpCircle, Plus, Edit, Trash2, ArrowLeft, CheckCircle2, 
-  Sparkles, AlertCircle, RefreshCw, Upload, Download, FileText, CheckSquare, Type
+  Sparkles, AlertCircle, RefreshCw, Upload, Download, FileText, CheckSquare, Type,
+  Wand2, Brain, X, Check, ChevronDown
 } from 'lucide-react';
 
 export default function QuestionManagement({ quizId, onBack }) {
@@ -16,6 +17,17 @@ export default function QuestionManagement({ quizId, onBack }) {
   // Modal State
   const [showModal, setShowModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+
+  // AI Generate State
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiCount, setAiCount] = useState(5);
+  const [aiDifficulty, setAiDifficulty] = useState('Intermediate');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [aiGenerated, setAiGenerated] = useState([]); // preview questions
+  const [aiSaving, setAiSaving] = useState(false);
+  const [aiSaveMsg, setAiSaveMsg] = useState('');
 
   // Form Fields
   const [questionText, setQuestionText] = useState('');
@@ -268,6 +280,65 @@ export default function QuestionManagement({ quizId, onBack }) {
     a.download = 'questions_template.csv'; a.click();
   };
 
+  // ---- AI GENERATE ----
+  const handleAIGenerate = async () => {
+    if (!aiTopic.trim()) { setAiError('Please enter a topic'); return; }
+    setAiError(''); setAiLoading(true); setAiGenerated([]);
+    try {
+      const res = await api.post('/ai/generate-questions', {
+        topic: aiTopic.trim(),
+        count: aiCount,
+        difficulty: aiDifficulty
+      });
+      setAiGenerated(res.data.questions);
+    } catch (err) {
+      setAiError(err.response?.data?.message || 'AI generation failed. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAISaveAll = async () => {
+    setAiSaving(true); setAiSaveMsg('');
+    let saved = 0;
+    for (const q of aiGenerated) {
+      try {
+        await api.post(`/quizzes/${quizId}/questions`, {
+          question_text: q.question_text,
+          question_type: 'MCQ',
+          marks: q.marks || 2,
+          explanation: q.explanation || '',
+          difficulty: q.difficulty || aiDifficulty,
+          options: q.options
+        });
+        saved++;
+      } catch (e) { console.error(e); }
+    }
+    await fetchQuestions();
+    setAiSaveMsg(`✅ ${saved} question${saved > 1 ? 's' : ''} saved successfully!`);
+    setAiSaving(false);
+    setTimeout(() => { setShowAIModal(false); setAiGenerated([]); setAiTopic(''); setAiSaveMsg(''); }, 1500);
+  };
+
+  const updateAIQuestion = (idx, field, value) => {
+    setAiGenerated(prev => prev.map((q, i) => i === idx ? { ...q, [field]: value } : q));
+  };
+
+  const updateAIOption = (qIdx, oIdx, field, value) => {
+    setAiGenerated(prev => prev.map((q, i) => {
+      if (i !== qIdx) return q;
+      const opts = q.options.map((o, j) => {
+        if (field === 'is_correct') return { ...o, is_correct: j === oIdx };
+        return j === oIdx ? { ...o, [field]: value } : o;
+      });
+      return { ...q, options: opts };
+    }));
+  };
+
+  const removeAIQuestion = (idx) => {
+    setAiGenerated(prev => prev.filter((_, i) => i !== idx));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -324,6 +395,12 @@ export default function QuestionManagement({ quizId, onBack }) {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => { setShowAIModal(true); setAiGenerated([]); setAiError(''); setAiSaveMsg(''); }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-semibold text-xs shadow-lg shadow-violet-500/30 transition"
+            >
+              <Wand2 className="w-4 h-4" /> AI Generate
+            </button>
             <button
               onClick={handleOpenCreate}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-semibold text-xs shadow-lg shadow-indigo-500/20 transition"
@@ -651,6 +728,169 @@ export default function QuestionManagement({ quizId, onBack }) {
               </div>
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* ---- AI GENERATE MODAL ---- */}
+      {showAIModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border border-violet-500/30 rounded-3xl shadow-2xl shadow-violet-500/20">
+
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 bg-slate-900 border-b border-slate-800 px-8 py-5 flex items-center justify-between rounded-t-3xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                  <Wand2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">AI Question Generator</h2>
+                  <p className="text-xs text-slate-400">Powered by Google Gemini AI</p>
+                </div>
+              </div>
+              <button onClick={() => setShowAIModal(false)} className="text-slate-400 hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-8 space-y-6">
+
+              {/* Input Section */}
+              <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50 space-y-4">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-violet-400" /> Configure AI Generation
+                </h3>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Topic / Subject *</label>
+                  <input
+                    type="text"
+                    value={aiTopic}
+                    onChange={e => setAiTopic(e.target.value)}
+                    placeholder="e.g. Python Programming, World War II, Human Anatomy..."
+                    className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition"
+                    onKeyDown={e => e.key === 'Enter' && handleAIGenerate()}
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Number of Questions</label>
+                    <select
+                      value={aiCount}
+                      onChange={e => setAiCount(Number(e.target.value))}
+                      className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
+                    >
+                      {[3, 5, 7, 10, 15, 20].map(n => <option key={n} value={n}>{n} Questions</option>)}
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficulty</label>
+                    <select
+                      value={aiDifficulty}
+                      onChange={e => setAiDifficulty(e.target.value)}
+                      className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
+                    >
+                      <option>Easy</option>
+                      <option>Intermediate</option>
+                      <option>Hard</option>
+                    </select>
+                  </div>
+                </div>
+
+                {aiError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {aiError}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleAIGenerate}
+                  disabled={aiLoading}
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white font-bold text-sm shadow-lg shadow-violet-500/30 transition disabled:opacity-50"
+                >
+                  {aiLoading ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" /> Generating with AI...</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4" /> Generate {aiCount} Questions</>
+                  )}
+                </button>
+              </div>
+
+              {/* Generated Questions Preview */}
+              {aiGenerated.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      {aiGenerated.length} Questions Generated — Review & Edit Before Saving
+                    </h3>
+                    <span className="text-xs text-slate-400">You can edit any question before saving</span>
+                  </div>
+
+                  {aiGenerated.map((q, qi) => (
+                    <div key={qi} className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-xs font-bold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full shrink-0">Q{qi + 1}</span>
+                        <button onClick={() => removeAIQuestion(qi)} className="text-slate-500 hover:text-rose-400 transition shrink-0">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <textarea
+                        value={q.question_text}
+                        onChange={e => updateAIQuestion(qi, 'question_text', e.target.value)}
+                        className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 resize-none"
+                        rows={2}
+                      />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {q.options.map((opt, oi) => (
+                          <div key={oi} className={`flex items-center gap-2 rounded-xl border p-2.5 transition ${opt.is_correct ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-slate-700 bg-slate-900/40'}`}>
+                            <button
+                              onClick={() => updateAIOption(qi, oi, 'is_correct', true)}
+                              className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${opt.is_correct ? 'border-emerald-500 bg-emerald-500' : 'border-slate-600'}`}
+                            >
+                              {opt.is_correct && <Check className="w-3 h-3 text-white" />}
+                            </button>
+                            <input
+                              value={opt.option_text}
+                              onChange={e => updateAIOption(qi, oi, 'option_text', e.target.value)}
+                              className="flex-1 bg-transparent text-xs text-white focus:outline-none"
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {q.explanation && (
+                        <p className="text-xs text-slate-400 italic border-l-2 border-violet-500/30 pl-3">{q.explanation}</p>
+                      )}
+                    </div>
+                  ))}
+
+                  {aiSaveMsg && (
+                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-bold text-center">{aiSaveMsg}</div>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleAIGenerate}
+                      disabled={aiLoading}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white text-xs font-semibold transition"
+                    >
+                      <RefreshCw className="w-4 h-4" /> Regenerate
+                    </button>
+                    <button
+                      onClick={handleAISaveAll}
+                      disabled={aiSaving || aiGenerated.length === 0}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
+                    >
+                      {aiSaving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</> : <><Check className="w-4 h-4" /> Save All {aiGenerated.length} Questions</>}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
