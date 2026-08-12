@@ -33,6 +33,8 @@ exports.createCategory = (req, res) => {
     const stmt = db.prepare('INSERT INTO categories (name, description, icon) VALUES (?, ?, ?)');
     const result = stmt.run(name.trim(), description || '', icon || 'Code');
 
+    if (db.saveBackup) db.saveBackup();
+
     const newCategory = db.prepare('SELECT * FROM categories WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(newCategory);
   } catch (error) {
@@ -62,6 +64,8 @@ exports.updateCategory = (req, res) => {
     db.prepare('UPDATE categories SET name = COALESCE(?, name), description = COALESCE(?, description), icon = COALESCE(?, icon) WHERE id = ?')
       .run(name ? name.trim() : null, description, icon, id);
 
+    if (db.saveBackup) db.saveBackup();
+
     const updated = db.prepare('SELECT * FROM categories WHERE id = ?').get(id);
     res.json(updated);
   } catch (error) {
@@ -80,6 +84,7 @@ exports.deleteCategory = (req, res) => {
     }
 
     db.prepare('DELETE FROM categories WHERE id = ?').run(id);
+    if (db.saveBackup) db.saveBackup();
     res.json({ message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Error deleting category:', error);

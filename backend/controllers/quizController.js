@@ -107,6 +107,7 @@ exports.createQuiz = (req, res) => {
     );
 
     const newQuiz = db.prepare('SELECT * FROM quizzes WHERE id = ?').get(result.lastInsertRowid);
+    if (db.saveBackup) db.saveBackup();
     res.status(201).json(newQuiz);
   } catch (error) {
     console.error('Error creating quiz:', error);
@@ -148,6 +149,7 @@ exports.updateQuiz = (req, res) => {
            image_url ? image_url : null,
            id);
 
+    if (db.saveBackup) db.saveBackup();
     const updated = db.prepare('SELECT * FROM quizzes WHERE id = ?').get(id);
     res.json(updated);
   } catch (error) {
@@ -177,6 +179,7 @@ exports.togglePublishStatus = (req, res) => {
     }
 
     db.prepare('UPDATE quizzes SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(newStatus, id);
+    if (db.saveBackup) db.saveBackup();
     res.json({ message: `Quiz status updated to ${newStatus}`, status: newStatus });
   } catch (error) {
     console.error('Error toggling status:', error);
@@ -192,7 +195,9 @@ exports.deleteQuiz = (req, res) => {
     if (!quiz) {
       return res.status(404).json({ message: 'Quiz not found' });
     }
+
     db.prepare('DELETE FROM quizzes WHERE id = ?').run(id);
+    if (db.saveBackup) db.saveBackup();
     res.json({ message: 'Quiz deleted successfully' });
   } catch (error) {
     console.error('Error deleting quiz:', error);

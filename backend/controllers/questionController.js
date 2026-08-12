@@ -72,6 +72,8 @@ exports.createQuestion = (req, res) => {
     });
 
     const newQuestionId = insertTx();
+    if (db.saveBackup) db.saveBackup();
+
     const newQuestion = db.prepare('SELECT * FROM questions WHERE id = ?').get(newQuestionId);
     newQuestion.options = db.prepare('SELECT * FROM options WHERE question_id = ?').all(newQuestionId);
 
@@ -115,6 +117,7 @@ exports.updateQuestion = (req, res) => {
     });
 
     updateTx();
+    if (db.saveBackup) db.saveBackup();
 
     const updated = db.prepare('SELECT * FROM questions WHERE id = ?').get(id);
     updated.options = db.prepare('SELECT * FROM options WHERE question_id = ?').all(id);
@@ -136,6 +139,7 @@ exports.deleteQuestion = (req, res) => {
     }
 
     db.prepare('DELETE FROM questions WHERE id = ?').run(id);
+    if (db.saveBackup) db.saveBackup();
     res.json({ message: 'Question deleted successfully' });
   } catch (error) {
     console.error('Error deleting question:', error);

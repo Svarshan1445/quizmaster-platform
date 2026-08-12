@@ -1,7 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
 const dbPath = path.resolve(process.cwd(), 'quiz.db');
+const backupPath = path.resolve(process.cwd(), 'data_store.json');
 const db = new Database(dbPath);
 
 // Enable Foreign Keys
@@ -93,8 +95,6 @@ function initDb() {
     );
   `);
 
-  console.log('Database tables initialized successfully.');
-
   // Safe migrations for new columns
   const migrations = [
     `ALTER TABLE quizzes ADD COLUMN shuffle_questions INTEGER DEFAULT 0`,
@@ -107,22 +107,50 @@ function initDb() {
     `DELETE FROM attempts WHERE completed_at IS NULL`
   ];
   migrations.forEach(sql => {
-    try { db.exec(sql); } catch (e) { /* Column already exists or handled */ }
+    try { db.exec(sql); } catch (e) { /* Handled */ }
   });
 
-  // Automatic persistent seeding for categories & admin account
+  // Check if backup file exists and restore data
+  if (fs.existsSync(backupPath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(backupPath, 'utf8'));
+      if (data.categories && data.categories.length > 0) {
+        const stmt = db.prepare(`INSERT OR REPLACE INTO categories (id, name, description, icon, created_at) VALUES (?, ?, ?, ?, ?)`);
+        data.categories.forEach(c => stmt.run(c.id, c.name, c.description, c.icon, c.created_at));
+      }
+      if (data.quizzes && data.quizzes.length > 0) {
+        const stmt = db.prepare(`INSERT OR REPLACE INTO quizzes (id, title, description, category_id, difficulty, duration, passing_score, max_attempts, status, shuffle_questions, shuffle_options, negative_marks, image_url, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        data.quizzes.forEach(q => stmt.run(q.id, q.title, q.description, q.category_id, q.difficulty, q.duration, q.passing_score, q.max_attempts, q.status, q.shuffle_questions || 0, q.shuffle_options || 0, q.negative_marks || 0, q.image_url || null, q.created_at, q.updated_at));
+      }
+      if (data.questions && data.questions.length > 0) {
+        const stmt = db.prepare(`INSERT OR REPLACE INTO questions (id, quiz_id, question_text, marks, explanation, difficulty, question_type, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+        data.questions.forEach(q => stmt.run(q.id, q.quiz_id, q.question_text, q.marks, q.explanation, q.difficulty, q.question_type || 'MCQ', q.created_at));
+      }
+      if (data.options && data.options.length > 0) {
+        const stmt = db.prepare(`INSERT OR REPLACE INTO options (id, question_id, option_text, is_correct) VALUES (?, ?, ?, ?)`);
+        data.options.forEach(o => stmt.run(o.id, o.question_id, o.option_text, o.is_correct));
+      }
+      if (data.users && data.users.length > 0) {
+        const stmt = db.prepare(`INSERT OR REPLACE INTO users (id, name, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+        data.users.forEach(u => stmt.run(u.id, u.name, u.email, u.password, u.role, u.status, u.created_at));
+      }
+      console.log('✓ Restored database state from backup JSON.');
+    } catch (e) {
+      console.warn('Backup restore warning:', e.message);
+    }
+  }
+
+  // Automatic persistent seeding for default categories & admin account
   try {
     const bcrypt = require('bcryptjs');
     const adminPass = bcrypt.hashSync('admin123', 10);
     
-    // Seed Admin Accounts
     db.prepare(`INSERT OR IGNORE INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'ADMIN', 'ACTIVE')`)
       .run('System Administrator', 'admin@quiz.com', adminPass);
     db.prepare(`INSERT OR IGNORE INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'ADMIN', 'ACTIVE')`)
       .run('System Administrator', 'admin@quizmaster.com', adminPass);
 
-    // Seed Standard Categories
-    const categories = [
+    const defaultCats = [
       ['JavaScript', 'Core JS concepts, ES6+, async programming, and scope', 'Code'],
       ['React.js', 'Components, hooks, state management, and virtual DOM', 'Atom'],
       ['Python', 'Python syntax, data structures, OOP, and modules', 'Terminal'],
@@ -136,17 +164,34 @@ function initDb() {
     ];
 
     const insertCat = db.prepare(`INSERT OR IGNORE INTO categories (name, description, icon) VALUES (?, ?, ?)`);
-    categories.forEach(([name, desc, icon]) => {
-      insertCat.run(name, desc, icon);
-    });
-
-    console.log('✓ Essential categories and admin accounts verified.');
+    defaultCats.forEach(([name, desc, icon]) => insertCat.run(name, desc, icon));
   } catch (err) {
-    console.warn('Auto-seeding warning:', err.message);
+    console.warn('Default seed warning:', err.message);
+  }
+
+  // Trigger initial backup sync
+  saveBackup();
+}
+
+function saveBackup() {
+  try {
+    const categories = db.prepare('SELECT * FROM categories').all();
+    const quizzes = db.prepare('SELECT * FROM quizzes').all();
+    const questions = db.prepare('SELECT * FROM questions').all();
+    const options = db.prepare('SELECT * FROM options').all();
+    const users = db.prepare('SELECT * FROM users').all();
+    const attempts = db.prepare('SELECT * FROM attempts').all();
+
+    const dump = { categories, quizzes, questions, options, users, attempts, updated_at: new Date().toISOString() };
+    fs.writeFileSync(backupPath, JSON.stringify(dump, null, 2), 'utf8');
+  } catch (e) {
+    console.warn('Save backup warning:', e.message);
   }
 }
 
 initDb();
 
-module.exports = db;
+// Export helper to allow controllers to trigger backup save when modifying data
+db.saveBackup = saveBackup;
 
+module.exports = db;
