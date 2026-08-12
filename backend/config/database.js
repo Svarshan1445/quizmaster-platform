@@ -1,7 +1,7 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.join(__dirname, '..', 'quiz.db');
+const dbPath = path.resolve(process.cwd(), 'quiz.db');
 const db = new Database(dbPath);
 
 // Enable Foreign Keys
