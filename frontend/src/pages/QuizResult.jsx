@@ -210,7 +210,7 @@ export default function QuizResult({ attemptId, onBackToQuizzes, onRetakeQuiz })
         <div className="space-y-4">
           {review?.map((q, idx) => {
             const isUserCorrect = q.is_correct;
-            const isUnanswered = q.question_type === 'FILL_BLANK'
+            const isUnanswered = (q.question_type === 'FILL_BLANK' || q.question_type === 'CODING')
               ? (!q.user_text_answer || q.user_text_answer.trim() === '')
               : !q.selected_option_id;
 
@@ -252,7 +252,37 @@ export default function QuizResult({ attemptId, onBackToQuizzes, onRetakeQuiz })
                     </div>
                   )}
 
-                  {q.question_type === 'FILL_BLANK' ? (
+                  {q.question_type === 'CODING' ? (
+                    <div className="space-y-2">
+                      <div className={`p-4 rounded-xl border text-xs font-mono ${
+                        isUnanswered
+                          ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                          : isUserCorrect
+                            ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300'
+                            : 'bg-rose-500/15 border-rose-500/50 text-rose-300'
+                      }`}>
+                        <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-700/50">
+                          <strong className="text-white font-sans text-xs">Your Code Answer:</strong>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-sans ${
+                            isUnanswered
+                              ? 'bg-amber-500/20 text-amber-300'
+                              : isUserCorrect
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-rose-500/20 text-rose-300'
+                          }`}>
+                            {isUnanswered ? 'Unanswered' : isUserCorrect ? 'Correct Code' : 'Incorrect Code'}
+                          </span>
+                        </div>
+                        <pre className="whitespace-pre-wrap font-mono text-xs">{q.user_text_answer || '(No code submitted)'}</pre>
+                      </div>
+                      {!isUserCorrect && q.options && q.options.length > 0 && (
+                        <div className="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 text-xs text-emerald-300 font-mono">
+                          <strong className="text-white font-sans text-xs block mb-1">Expected Code Solution / Output:</strong>
+                          <pre className="whitespace-pre-wrap">{q.options[0]?.option_text}</pre>
+                        </div>
+                      )}
+                    </div>
+                  ) : q.question_type === 'FILL_BLANK' ? (
                     <div className="space-y-2">
                       <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
                         isUnanswered

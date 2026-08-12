@@ -125,15 +125,19 @@ exports.submitAttempt = (req, res) => {
         totalPossibleMarks += q.marks;
         const userAnswer = userAnswers[q.id];
 
-        if (q.question_type === 'FILL_BLANK') {
+        if (q.question_type === 'FILL_BLANK' || q.question_type === 'CODING') {
           const textAns = (typeof userAnswer === 'string' ? userAnswer : '').trim();
           if (!textAns) {
             unansweredCount++;
             answerStmt.run(attempt_id, q.id, null, null, 0);
           } else {
-            // Compare text with acceptable options for this fill in the blank question
+            // Compare text with acceptable options for fill in blank or coding exercise
             const validOptions = db.prepare('SELECT option_text FROM options WHERE question_id = ?').all(q.id);
-            const isCorrect = validOptions.some(opt => opt.option_text.trim().toLowerCase() === textAns.toLowerCase());
+            const normUser = textAns.toLowerCase().replace(/\s+/g, ' ');
+            const isCorrect = validOptions.some(opt => {
+              const normOpt = opt.option_text.trim().toLowerCase().replace(/\s+/g, ' ');
+              return normOpt === normUser || normUser.includes(normOpt) || normOpt.includes(normUser);
+            });
 
             if (isCorrect) {
               obtainedScore += q.marks;

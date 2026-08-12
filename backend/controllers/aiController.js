@@ -5,15 +5,30 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
   const list = [];
   const total = Math.min(count, 20);
 
-  const types = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'];
+  const types = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'CODING'];
 
   for (let i = 0; i < total; i++) {
     let qType = requestedType;
     if (requestedType === 'MIXED') {
-      qType = types[i % 3];
+      qType = types[i % 4];
     }
 
-    if (qType === 'TRUE_FALSE') {
+    if (qType === 'CODING') {
+      const codeSnippet = normTopic.includes('python') 
+        ? `print("Hello ${normTopic}")` 
+        : `console.log("Hello ${normTopic}");`;
+
+      list.push({
+        question_text: `Write a single line of code in ${normTopic || 'Programming'} to print/output "Hello ${normTopic || 'World'}" to the console.`,
+        explanation: `In ${normTopic}, the standard output command is \`${codeSnippet}\`.`,
+        difficulty,
+        marks: 2,
+        question_type: 'CODING',
+        options: [
+          { option_text: codeSnippet, is_correct: true }
+        ]
+      });
+    } else if (qType === 'TRUE_FALSE') {
       const isTrue = i % 2 === 0;
       list.push({
         question_text: `In ${normTopic}, statement #${i + 1} regarding syntax and behavior is standard core behavior.`,
@@ -75,14 +90,14 @@ const generateQuestions = async (req, res) => {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const prompt = `Generate exactly ${count} quiz questions about "${topic}" at ${difficulty} difficulty level.
-Question Type Requested: ${questionType} (if MIXED, create a balanced mix of MCQ, TRUE_FALSE, and FILL_BLANK questions).
+Question Type Requested: ${questionType} (if MIXED, create a balanced mix of MCQ, TRUE_FALSE, FILL_BLANK, and CODING programming questions).
 ${language !== 'English' ? `Write the questions in ${language}.` : ''}
 
 Return ONLY a valid JSON array with this exact structure (no markdown, no extra text):
 [
   {
     "question_text": "Question text here?",
-    "question_type": "MCQ", // MUST be "MCQ" or "TRUE_FALSE" or "FILL_BLANK"
+    "question_type": "MCQ", // MUST be "MCQ" or "TRUE_FALSE" or "FILL_BLANK" or "CODING"
     "explanation": "Brief explanation of the correct answer",
     "options": [
       { "option_text": "Option text", "is_correct": true }
@@ -94,6 +109,7 @@ Rules for options by question_type:
 - For "MCQ": Exactly 4 options, exactly 1 option has "is_correct": true
 - For "TRUE_FALSE": Exactly 2 options [ { "option_text": "True", "is_correct": boolean }, { "option_text": "False", "is_correct": boolean } ]
 - For "FILL_BLANK": Exactly 1 option [ { "option_text": "Exact Answer Text", "is_correct": true } ]
+- For "CODING": Exactly 1 option [ { "option_text": "Expected Code Solution or Output", "is_correct": true } ]
 - Return ONLY the JSON array, nothing else`;
 
       const modelNames = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
@@ -116,7 +132,7 @@ Rules for options by question_type:
         if (jsonMatch) {
           const questions = JSON.parse(jsonMatch[0]);
           const validated = questions.map((q, i) => {
-            const type = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'].includes(q.question_type)
+            const type = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'CODING'].includes(q.question_type)
               ? q.question_type
               : 'MCQ';
 
@@ -130,7 +146,7 @@ Rules for options by question_type:
                 { option_text: 'True', is_correct: true },
                 { option_text: 'False', is_correct: false }
               ];
-            } else if (type === 'FILL_BLANK' && opts.length < 1) {
+            } else if ((type === 'FILL_BLANK' || type === 'CODING') && opts.length < 1) {
               opts = [{ option_text: 'Answer', is_correct: true }];
             }
 

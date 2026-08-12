@@ -3,7 +3,7 @@ import api from '../../services/api';
 import { 
   HelpCircle, Plus, Edit, Trash2, ArrowLeft, CheckCircle2, 
   Sparkles, AlertCircle, RefreshCw, Upload, Download, FileText, CheckSquare, Type,
-  Wand2, Brain, X, Check, ChevronDown
+  Wand2, Brain, X, Check, ChevronDown, Code
 } from 'lucide-react';
 
 export default function QuestionManagement({ quizId, onBack }) {
@@ -72,7 +72,7 @@ export default function QuestionManagement({ quizId, onBack }) {
         { option_text: 'True', is_correct: true },
         { option_text: 'False', is_correct: false }
       ]);
-    } else if (newType === 'FILL_BLANK') {
+    } else if (newType === 'FILL_BLANK' || newType === 'CODING') {
       setOptions([
         { option_text: '', is_correct: true }
       ]);
@@ -354,6 +354,12 @@ export default function QuestionManagement({ quizId, onBack }) {
 
   const getTypeBadge = (type) => {
     switch (type) {
+      case 'CODING':
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+            <Code className="w-3 h-3" /> Coding / Code Snippet
+          </span>
+        );
       case 'TRUE_FALSE':
         return (
           <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
@@ -783,10 +789,11 @@ export default function QuestionManagement({ quizId, onBack }) {
                       onChange={e => setAiQuestionType(e.target.value)}
                       className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 font-medium"
                     >
-                      <option value="MIXED">✨ Mixed (MCQ + True/False + Blank)</option>
+                      <option value="MIXED">✨ Mixed (MCQ + T/F + Blank + Coding)</option>
                       <option value="MCQ">Multiple Choice (MCQ)</option>
                       <option value="TRUE_FALSE">True / False</option>
                       <option value="FILL_BLANK">Fill in the Blanks</option>
+                      <option value="CODING">💻 Coding / Programming</option>
                     </select>
                   </div>
                   <div>

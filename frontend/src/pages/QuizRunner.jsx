@@ -450,7 +450,33 @@ export default function QuizRunner({ quizId, onCompleteQuiz, onCancel }) {
 
           {/* Answer Options or Input */}
           <div className="space-y-3 pt-2">
-            {currentQuestion.question_type === 'FILL_BLANK' ? (
+            {currentQuestion.question_type === 'CODING' ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold text-cyan-400 uppercase tracking-wider font-mono">💻 Code Editor / Programming Input</label>
+                  <span className="text-[11px] text-slate-400">Write your code or output below</span>
+                </div>
+                <div className="bg-slate-950 border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl">
+                  <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-400 font-mono">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-rose-500/80"></div>
+                      <div className="w-3 h-3 rounded-full bg-amber-500/80"></div>
+                      <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                      <span className="ml-2 text-slate-300 font-semibold">solution.code</span>
+                    </div>
+                    <span>UTF-8</span>
+                  </div>
+                  <textarea
+                    rows={6}
+                    value={userAnswers[currentQuestion.id] || ''}
+                    onChange={(e) => handleSelectOption(currentQuestion.id, e.target.value)}
+                    placeholder="// Write your code or single-line answer here... e.g. print('Hello World')"
+                    className="w-full bg-slate-950 p-4 font-mono text-sm text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-y"
+                    style={{ fontFamily: 'Consolas, Monaco, "Courier New", monospace' }}
+                  />
+                </div>
+              </div>
+            ) : currentQuestion.question_type === 'FILL_BLANK' ? (
               <div className="space-y-2">
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Type Your Answer Below</label>
                 <input
