@@ -641,7 +641,34 @@ export default function QuestionManagement({ quizId, onBack }) {
               </div>
 
               {/* Answer Configuration depending on Question Type */}
-              {questionType === 'FILL_BLANK' ? (
+              {questionType === 'CODING' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <Code className="w-4 h-4" /> Expected Solution / Reference Code
+                    </label>
+                    <span className="text-[11px] text-slate-400">No character limit — short or long code allowed</span>
+                  </div>
+                  <div className="bg-slate-950 border border-emerald-500/50 rounded-2xl overflow-hidden shadow-inner">
+                    <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-400 font-mono">
+                      <span className="text-emerald-400 font-semibold">solution.code</span>
+                      <span>UTF-8 / Multi-line Supported</span>
+                    </div>
+                    <textarea
+                      rows={6}
+                      required
+                      value={options[0]?.option_text || ''}
+                      onChange={(e) => handleOptionTextChange(0, e.target.value)}
+                      placeholder={`// Type expected code or output here (short 1-liner or full function)\n// Example:\ndef factorial(n):\n    return 1 if n <= 1 else n * factorial(n - 1)`}
+                      className="w-full bg-slate-950 p-4 font-mono text-sm text-emerald-300 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 resize-y"
+                      style={{ fontFamily: 'Consolas, Monaco, "Courier New", monospace' }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    💡 The grading engine automatically normalizes spacing, quotes, semicolons, and code output so student submissions (short or long) are accurately evaluated.
+                  </p>
+                </div>
+              ) : questionType === 'FILL_BLANK' ? (
                 <div className="space-y-2">
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Correct Answer Text</label>
                   <input

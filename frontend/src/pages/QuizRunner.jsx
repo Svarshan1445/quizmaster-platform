@@ -454,7 +454,7 @@ export default function QuizRunner({ quizId, onCompleteQuiz, onCancel }) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-semibold text-cyan-400 uppercase tracking-wider font-mono">💻 Code Editor / Programming Input</label>
-                  <span className="text-[11px] text-slate-400">Write your code or output below</span>
+                  <span className="text-[11px] text-slate-400">Write short 1-liner or full multi-line code solution (No length limit)</span>
                 </div>
                 <div className="bg-slate-950 border border-cyan-500/40 rounded-2xl overflow-hidden shadow-2xl">
                   <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs text-slate-400 font-mono">
@@ -464,13 +464,13 @@ export default function QuizRunner({ quizId, onCompleteQuiz, onCancel }) {
                       <div className="w-3 h-3 rounded-full bg-emerald-500/80"></div>
                       <span className="ml-2 text-slate-300 font-semibold">solution.code</span>
                     </div>
-                    <span>UTF-8</span>
+                    <span>UTF-8 / Multi-line</span>
                   </div>
                   <textarea
-                    rows={6}
+                    rows={8}
                     value={userAnswers[currentQuestion.id] || ''}
                     onChange={(e) => handleSelectOption(currentQuestion.id, e.target.value)}
-                    placeholder="// Write your code or single-line answer here... e.g. print('Hello World')"
+                    placeholder="// Write your code or answer here...\n// Short 1-liner or multi-line function solutions are accepted.\n// e.g. print('Hello World') or def solution(): ..."
                     className="w-full bg-slate-950 p-4 font-mono text-sm text-cyan-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 resize-y"
                     style={{ fontFamily: 'Consolas, Monaco, "Courier New", monospace' }}
                   />

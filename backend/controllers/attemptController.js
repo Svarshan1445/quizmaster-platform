@@ -134,11 +134,17 @@ exports.submitAttempt = (req, res) => {
           } else {
             // Compare text with acceptable options for fill in blank or coding exercise
             const validOptions = db.prepare('SELECT option_text FROM options WHERE question_id = ?').all(q.id);
-            const normUser = textAns.toLowerCase().replace(/\s+/g, ' ');
-            const isCorrect = validOptions.some(opt => {
-              const normOpt = opt.option_text.trim().toLowerCase().replace(/\s+/g, ' ');
-              return normOpt === normUser || normUser.includes(normOpt) || normOpt.includes(normUser);
-            });
+            
+            let isCorrect = false;
+            if (q.question_type === 'CODING') {
+                isCorrect = validOptions.some(opt => evaluateCodingSubmission(textAns, opt.option_text));
+            } else {
+                const normUser = textAns.toLowerCase().replace(/\s+/g, ' ');
+                isCorrect = validOptions.some(opt => {
+                  const normOpt = opt.option_text.trim().toLowerCase().replace(/\s+/g, ' ');
+                  return normOpt === normUser || normUser.includes(normOpt) || normOpt.includes(normUser);
+                });
+            }
 
             if (isCorrect) {
               obtainedScore += q.marks;
