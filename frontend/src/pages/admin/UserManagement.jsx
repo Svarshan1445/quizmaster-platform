@@ -144,6 +144,19 @@ export default function UserManagement() {
                       {new Date(u.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-4 px-4 text-right space-x-2">
+                      {u.role !== 'ADMIN' && (
+                        <button
+                          onClick={() => handleToggleStatus(u)}
+                          className={`p-2 rounded-lg transition border ${
+                            u.status === 'ACTIVE'
+                              ? 'text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border-amber-500/20'
+                              : 'text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20'
+                          }`}
+                          title={u.status === 'ACTIVE' ? 'Deactivate Student Account' : 'Activate Student Account'}
+                        >
+                          {u.status === 'ACTIVE' ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                        </button>
+                      )}
                       <button
                         onClick={() => setSelectedUserModal(u)}
                         className="p-2 rounded-lg text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition"

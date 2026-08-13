@@ -66,6 +66,8 @@ exports.updateUserStatus = (req, res) => {
     const newStatus = status || (user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE');
     db.prepare('UPDATE users SET status = ? WHERE id = ?').run(newStatus, id);
 
+    if (db.saveBackup) db.saveBackup();
+
     res.json({ message: `User status updated to ${newStatus}`, status: newStatus });
   } catch (error) {
     console.error('Error updating user status:', error);
@@ -87,6 +89,7 @@ exports.deleteUser = (req, res) => {
     }
 
     db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    if (db.saveBackup) db.saveBackup();
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     console.error('Error deleting user:', error);
