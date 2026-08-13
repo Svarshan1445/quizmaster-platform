@@ -1,4 +1,5 @@
 const db = require('../config/database');
+const { sendQuizResultEmail } = require('../utils/emailService');
 
 // Shuffle array utility
 function shuffleArray(arr) {
@@ -228,6 +229,25 @@ exports.submitAttempt = (req, res) => {
     });
 
     const result = processTx();
+
+    // Send quiz result email to student asynchronously
+    try {
+      const student = db.prepare('SELECT name, email FROM users WHERE id = ?').get(req.user.id);
+      const quizInfo = db.prepare('SELECT title FROM quizzes WHERE id = ?').get(quizId);
+      if (student && quizInfo) {
+        sendQuizResultEmail(
+          student.email,
+          student.name,
+          quizInfo.title,
+          `${result.score}/${result.total_marks}`,
+          result.percentage,
+          result.status
+        );
+      }
+    } catch (emailErr) {
+      console.warn('Quiz result email warning:', emailErr.message);
+    }
+
     res.json(result);
   } catch (error) {
     console.error('Error submitting attempt:', error);
