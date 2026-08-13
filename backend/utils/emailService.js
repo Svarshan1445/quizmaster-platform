@@ -1,35 +1,29 @@
 const nodemailer = require('nodemailer');
 
-// The platform sender address — always use authenticated Gmail account
-const getSender = () => process.env.EMAIL_USER
-  ? `"QuizMaster Platform" <${process.env.EMAIL_USER}>`
-  : '"QuizMaster Platform" <noreply@quizmaster.com>';
+const PLATFORM_NAME = 'QuizMaster';
+const PLATFORM_URL = 'https://quizmaster-platform-iota.vercel.app';
+const BRAND_COLOR = '#4f46e5';
+const BRAND_LIGHT = '#eef2ff';
 
-// Configure Transporter (supports Gmail SMTP, Ethereal test account, or custom SMTP via env)
+// Always use authenticated Gmail as sender
+const getSender = () => process.env.EMAIL_USER
+  ? `"${PLATFORM_NAME} Platform" <${process.env.EMAIL_USER}>`
+  : `"${PLATFORM_NAME} Platform" <noreply@quizmaster.com>`;
+
+// Create transporter — Gmail if env set, else Ethereal test
 const createTransporter = async () => {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    // Strip spaces from App Password (Google displays them with spaces)
     const cleanPass = process.env.EMAIL_PASS.replace(/\s/g, '');
     return nodemailer.createTransport({
       service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: cleanPass
-      }
+      auth: { user: process.env.EMAIL_USER, pass: cleanPass }
     });
   }
-
-  // Fallback to test SMTP account (Ethereal) for instant zero-config testing
   try {
     const testAccount = await nodemailer.createTestAccount();
     return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
-      }
+      host: 'smtp.ethereal.email', port: 587, secure: false,
+      auth: { user: testAccount.user, pass: testAccount.pass }
     });
   } catch (err) {
     console.warn('Could not create test email account:', err.message);
@@ -37,131 +31,121 @@ const createTransporter = async () => {
   }
 };
 
-// Send Login Notification Email
-const sendLoginNotificationEmail = async (email, name, role = 'STUDENT') => {
-  try {
-    const transporter = await createTransporter();
-    if (!transporter) return;
+// ─── Shared Layout Wrapper (Internshala-inspired clean light theme) ───────────
+const emailWrapper = (bodyContent) => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>${PLATFORM_NAME}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:32px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);max-width:600px;width:100%;">
 
-    const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+        <!-- Header -->
+        <tr>
+          <td style="background:${BRAND_COLOR};padding:28px 40px;text-align:left;">
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="width:40px;height:40px;background:rgba(255,255,255,0.2);border-radius:10px;text-align:center;vertical-align:middle;font-size:22px;">🏆</td>
+                <td style="padding-left:12px;">
+                  <span style="color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.5px;">${PLATFORM_NAME}</span><br/>
+                  <span style="color:rgba(255,255,255,0.75);font-size:12px;">Assessment & Certification Platform</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-    const htmlContent = `
-      <div style="font-family: 'Times New Roman', serif, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 16px; padding: 32px; border: 1px solid #1e293b;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1, #8b5cf6); border-radius: 12px; line-height: 48px; font-size: 24px; color: white;">🏆</div>
-          <h2 style="color: #ffffff; margin-top: 12px; font-size: 24px;">QuizMaster Platform</h2>
-          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Security Alert & Login Notification</p>
-        </div>
+        <!-- Body -->
+        <tr><td style="padding:36px 40px;">
+          ${bodyContent}
+        </td></tr>
 
-        <div style="background: #1e293b; border-radius: 12px; padding: 20px; border-left: 4px solid #6366f1; margin-bottom: 24px;">
-          <h3 style="color: #818cf8; margin: 0 0 8px 0; font-size: 16px;">Hello ${name},</h3>
-          <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0;">
-            Your account <strong>${email}</strong> was successfully logged in to the QuizMaster Assessment Platform.
-          </p>
-        </div>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:20px 40px;text-align:center;">
+            <p style="color:#94a3b8;font-size:12px;margin:0 0 4px;">This is an automated email from ${PLATFORM_NAME} Platform. Please do not reply to this email.</p>
+            <p style="color:#cbd5e1;font-size:11px;margin:0;">© 2026 ${PLATFORM_NAME} Enterprise · <a href="${PLATFORM_URL}" style="color:${BRAND_COLOR};text-decoration:none;">Visit Platform</a></p>
+          </td>
+        </tr>
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 24px;">
-          <tr style="border-bottom: 1px solid #334155;">
-            <td style="padding: 10px 0; color: #94a3b8;">Account Role:</td>
-            <td style="padding: 10px 0; color: #ffffff; text-align: right; font-weight: bold;">${role}</td>
-          </tr>
-          <tr style="border-bottom: 1px solid #334155;">
-            <td style="padding: 10px 0; color: #94a3b8;">Login Time:</td>
-            <td style="padding: 10px 0; color: #ffffff; text-align: right; font-weight: bold;">${timeString} (IST)</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 0; color: #94a3b8;">Status:</td>
-            <td style="padding: 10px 0; color: #34d399; text-align: right; font-weight: bold;">✓ Successful</td>
-          </tr>
-        </table>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 
-        <div style="text-align: center; border-top: 1px solid #334155; pt-20; margin-top: 24px; padding-top: 20px;">
-          <p style="color: #64748b; font-size: 12px; margin: 0;">If you did not perform this login, please contact your Administrator immediately.</p>
-          <p style="color: #475569; font-size: 11px; margin-top: 8px;">QuizMaster Enterprise &copy; 2026</p>
-        </div>
-      </div>
-    `;
+// ─── CTA Button ───────────────────────────────────────────────────────────────
+const ctaButton = (text, url, color = BRAND_COLOR) =>
+  `<table cellpadding="0" cellspacing="0" style="margin:24px auto;">
+    <tr><td style="background:${color};border-radius:8px;">
+      <a href="${url}" style="display:inline-block;padding:13px 32px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;letter-spacing:0.3px;">${text} →</a>
+    </td></tr>
+  </table>`;
 
-    const info = await transporter.sendMail({
-      from: getSender(),
-      to: email,
-      subject: '🔐 Security Alert: Successful Login to QuizMaster',
-      html: htmlContent
-    });
+// ─── Info Row for tables ──────────────────────────────────────────────────────
+const infoRow = (label, value, valueColor = '#1e293b') =>
+  `<tr style="border-bottom:1px solid #f1f5f9;">
+    <td style="padding:10px 0;color:#64748b;font-size:13px;width:40%;">${label}</td>
+    <td style="padding:10px 0;color:${valueColor};font-size:13px;font-weight:600;text-align:right;">${value}</td>
+  </tr>`;
 
-    if (info.messageId && nodemailer.getTestMessageUrl(info)) {
-      console.log('Test Email preview URL:', nodemailer.getTestMessageUrl(info));
-    }
-    console.log(`✓ Login notification email sent to ${email}`);
-  } catch (err) {
-    console.warn('Failed to send login email notification:', err.message);
-  }
-};
-
-// Send Welcome Email on Registration
+// ─── 1. Welcome Email (on Register) ──────────────────────────────────────────
 const sendWelcomeEmail = async (email, name) => {
   try {
     const transporter = await createTransporter();
     if (!transporter) return;
 
-    const htmlContent = `
-      <div style="font-family: 'Times New Roman', serif, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 16px; padding: 32px; border: 1px solid #1e293b;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <div style="display: inline-block; width: 48px; height: 48px; background: linear-gradient(135deg, #10b981, #14b8a6); border-radius: 12px; line-height: 48px; font-size: 24px; color: white;">🎓</div>
-          <h2 style="color: #ffffff; margin-top: 12px; font-size: 24px;">Welcome to QuizMaster!</h2>
-          <p style="color: #94a3b8; font-size: 14px; margin-top: 4px;">Student Account Created Successfully</p>
-        </div>
+    const body = `
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 6px;">Welcome to ${PLATFORM_NAME}, ${name}! 🎓</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 24px;">Your student account has been created successfully. You're all set to start your learning journey.</p>
 
-        <div style="background: #1e293b; border-radius: 12px; padding: 20px; border-left: 4px solid #10b981; margin-bottom: 24px;">
-          <h3 style="color: #34d399; margin: 0 0 8px 0; font-size: 16px;">Welcome, ${name}!</h3>
-          <p style="color: #cbd5e1; font-size: 14px; line-height: 1.6; margin: 0;">
-            Your student account has been registered successfully. You can now take assessments, practice coding challenges, earn certificates, and compete on the global leaderboard.
-          </p>
-        </div>
-
-        <div style="text-align: center; margin: 28px 0;">
-          <a href="https://quizmaster-platform-iota.vercel.app" style="background: linear-gradient(135deg, #10b981, #14b8a6); color: white; padding: 12px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; font-size: 14px;">Explore Available Quizzes →</a>
-        </div>
-
-        <div style="text-align: center; border-top: 1px solid #334155; padding-top: 20px;">
-          <p style="color: #475569; font-size: 11px;">QuizMaster Enterprise &copy; 2026 — Verified Student Learning</p>
-        </div>
+      <div style="background:${BRAND_LIGHT};border-radius:10px;padding:20px 24px;margin-bottom:24px;">
+        <p style="color:#3730a3;font-weight:600;font-size:14px;margin:0 0 12px;">What you can do on ${PLATFORM_NAME}:</p>
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr><td style="padding:5px 0;color:#4338ca;font-size:13px;">📚 &nbsp;Browse and attempt quizzes across multiple categories</td></tr>
+          <tr><td style="padding:5px 0;color:#4338ca;font-size:13px;">💻 &nbsp;Solve real-world coding & programming challenges</td></tr>
+          <tr><td style="padding:5px 0;color:#4338ca;font-size:13px;">🏆 &nbsp;Earn certificates upon passing assessments</td></tr>
+          <tr><td style="padding:5px 0;color:#4338ca;font-size:13px;">📊 &nbsp;Track your progress and compete on the leaderboard</td></tr>
+        </table>
       </div>
+
+      <p style="color:#64748b;font-size:13px;text-align:center;margin:0 0 4px;">Your registered email address:</p>
+      <p style="color:#1e293b;font-size:14px;font-weight:600;text-align:center;margin:0 0 20px;">${email}</p>
+
+      ${ctaButton('Start Exploring Quizzes', PLATFORM_URL, '#10b981')}
+
+      <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">If you did not create this account, please ignore this email.</p>
     `;
 
     await transporter.sendMail({
-      from: getSender(),
-      to: email,
-      subject: '🎓 Welcome to QuizMaster Assessment Platform!',
-      html: htmlContent
+      from: getSender(), to: email,
+      subject: `🎓 Welcome to ${PLATFORM_NAME} — Account Created Successfully`,
+      html: emailWrapper(body)
     });
 
-    // Also notify admin about new student registration
+    // Notify admin about new registration
     if (process.env.EMAIL_USER && process.env.EMAIL_USER !== email) {
-      const adminHtml = `
-        <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 12px; padding: 24px; border: 1px solid #1e293b;">
-          <div style="text-align:center; margin-bottom:16px;">
-            <div style="display:inline-block; width:40px; height:40px; background:linear-gradient(135deg,#6366f1,#8b5cf6); border-radius:10px; line-height:40px; font-size:20px;">👤</div>
-            <h2 style="color:#fff; margin-top:10px; font-size:18px;">New Student Registered!</h2>
-          </div>
-          <div style="background:#1e293b; border-radius:10px; padding:16px; border-left:4px solid #6366f1;">
-            <p style="color:#94a3b8; font-size:13px; margin:0 0 8px;">A new student just joined QuizMaster:</p>
-            <p style="color:#fff; font-size:15px; font-weight:bold; margin:0;">👤 ${name}</p>
-            <p style="color:#818cf8; font-size:13px; margin:4px 0 0;">📧 ${email}</p>
-            <p style="color:#64748b; font-size:12px; margin:8px 0 0;">⏰ ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST</p>
-          </div>
-          <div style="text-align:center; margin-top:16px; border-top:1px solid #334155; padding-top:12px;">
-            <p style="color:#475569; font-size:11px;">QuizMaster Admin Alert © 2026</p>
-          </div>
-        </div>
+      const adminBody = `
+        <h2 style="color:#1e293b;font-size:20px;margin:0 0 6px;">New Student Registration 🆕</h2>
+        <p style="color:#64748b;font-size:14px;margin:0 0 24px;">A new student has just joined the ${PLATFORM_NAME} platform.</p>
+        <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+          ${infoRow('Full Name', name)}
+          ${infoRow('Email Address', email, '#4f46e5')}
+          ${infoRow('Registered At', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST')}
+          ${infoRow('Account Status', '✅ Active', '#10b981')}
+        </table>
+        ${ctaButton('View in Admin Panel', `${PLATFORM_URL}`)}
       `;
       await transporter.sendMail({
-        from: getSender(),
-        to: process.env.EMAIL_USER,
+        from: getSender(), to: process.env.EMAIL_USER,
         subject: `🆕 New Student Registered: ${name}`,
-        html: adminHtml
+        html: emailWrapper(adminBody)
       });
-      console.log(`✓ Admin notified about new student: ${name} (${email})`);
     }
 
     console.log(`✓ Welcome email sent to ${email}`);
@@ -170,65 +154,149 @@ const sendWelcomeEmail = async (email, name) => {
   }
 };
 
-// Send Quiz Result Email to Student
+// ─── 2. Login Security Alert Email ───────────────────────────────────────────
+const sendLoginNotificationEmail = async (email, name, role = 'STUDENT') => {
+  try {
+    const transporter = await createTransporter();
+    if (!transporter) return;
+
+    const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+
+    const body = `
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 6px;">Successful Login Alert 🔐</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 24px;">Hi <strong>${name}</strong>, your ${PLATFORM_NAME} account was accessed successfully.</p>
+
+      <div style="background:#fff7ed;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:24px;">
+        <p style="color:#92400e;font-size:13px;margin:0;"><strong>Security Notice:</strong> If this wasn't you, please change your password immediately and contact the administrator.</p>
+      </div>
+
+      <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+        ${infoRow('Account Name', name)}
+        ${infoRow('Email Address', email, '#4f46e5')}
+        ${infoRow('Account Role', role)}
+        ${infoRow('Login Time', timeString + ' (IST)')}
+        ${infoRow('Login Status', '✅ Successful', '#10b981')}
+      </table>
+
+      ${ctaButton('Go to My Dashboard', PLATFORM_URL)}
+
+      <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">Not you? Contact your administrator at <a href="mailto:${process.env.EMAIL_USER || 'admin@quizmaster.com'}" style="color:${BRAND_COLOR};">${process.env.EMAIL_USER || 'admin@quizmaster.com'}</a></p>
+    `;
+
+    await transporter.sendMail({
+      from: getSender(), to: email,
+      subject: `🔐 Security Alert: Successful Login to ${PLATFORM_NAME}`,
+      html: emailWrapper(body)
+    });
+
+    console.log(`✓ Login notification sent to ${email}`);
+  } catch (err) {
+    console.warn('Failed to send login email:', err.message);
+  }
+};
+
+// ─── 3. Quiz Result Email ─────────────────────────────────────────────────────
 const sendQuizResultEmail = async (email, name, quizTitle, score, percentage, status) => {
   try {
     const transporter = await createTransporter();
     if (!transporter) return;
 
-    const color = status === 'PASSED' ? '#10b981' : '#ef4444';
-    const icon = status === 'PASSED' ? '🏆' : '📘';
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #f8fafc; border-radius: 16px; padding: 32px; border: 1px solid #1e293b;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <div style="display:inline-block; width:48px; height:48px; background:linear-gradient(135deg,${color},${color}99); border-radius:12px; line-height:48px; font-size:24px;">${icon}</div>
-          <h2 style="color:#fff; margin-top:12px; font-size:22px;">Quiz Result — ${status}</h2>
-          <p style="color:#94a3b8; font-size:13px;">${quizTitle}</p>
-        </div>
-        <div style="background:#1e293b; border-radius:12px; padding:20px; border-left:4px solid ${color}; margin-bottom:20px;">
-          <h3 style="color:${color}; margin:0 0 8px; font-size:15px;">Hi ${name},</h3>
-          <p style="color:#cbd5e1; font-size:14px; margin:0;">Your quiz has been evaluated. Here is your result summary:</p>
-        </div>
-        <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:24px;">
-          <tr style="border-bottom:1px solid #334155;">
-            <td style="padding:10px 0; color:#94a3b8;">Quiz:</td>
-            <td style="padding:10px 0; color:#fff; text-align:right; font-weight:bold;">${quizTitle}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #334155;">
-            <td style="padding:10px 0; color:#94a3b8;">Score:</td>
-            <td style="padding:10px 0; color:#fff; text-align:right; font-weight:bold;">${score}</td>
-          </tr>
-          <tr style="border-bottom:1px solid #334155;">
-            <td style="padding:10px 0; color:#94a3b8;">Percentage:</td>
-            <td style="padding:10px 0; color:${color}; text-align:right; font-weight:bold;">${percentage}%</td>
-          </tr>
-          <tr>
-            <td style="padding:10px 0; color:#94a3b8;">Status:</td>
-            <td style="padding:10px 0; color:${color}; text-align:right; font-weight:bold;">${status === 'PASSED' ? '✅ PASSED' : '❌ FAILED'}</td>
-          </tr>
-        </table>
-        <div style="text-align:center; margin:20px 0;">
-          <a href="https://quizmaster-platform-iota.vercel.app" style="background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; padding:12px 28px; text-decoration:none; border-radius:10px; font-weight:bold; font-size:13px;">View Full Results →</a>
-        </div>
-        <div style="text-align:center; border-top:1px solid #334155; padding-top:16px;">
-          <p style="color:#475569; font-size:11px;">QuizMaster Enterprise © 2026</p>
-        </div>
+    const passed = status === 'PASSED';
+    const statusColor = passed ? '#10b981' : '#ef4444';
+    const statusBg = passed ? '#f0fdf4' : '#fef2f2';
+    const statusBorder = passed ? '#86efac' : '#fca5a5';
+
+    const body = `
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 6px;">Your Quiz Result is Ready ${passed ? '🏆' : '📘'}</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 24px;">Hi <strong>${name}</strong>, your submission for <strong>${quizTitle}</strong> has been evaluated.</p>
+
+      <div style="background:${statusBg};border:1px solid ${statusBorder};border-radius:10px;padding:20px 24px;text-align:center;margin-bottom:24px;">
+        <p style="color:${statusColor};font-size:36px;font-weight:800;margin:0 0 4px;">${percentage}%</p>
+        <p style="color:${statusColor};font-size:18px;font-weight:700;margin:0;">${passed ? '✅ PASSED' : '❌ FAILED'}</p>
       </div>
+
+      <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+        ${infoRow('Quiz Title', quizTitle)}
+        ${infoRow('Your Score', score)}
+        ${infoRow('Percentage', `${percentage}%`, statusColor)}
+        ${infoRow('Result', passed ? '✅ PASSED' : '❌ FAILED', statusColor)}
+        ${infoRow('Completed At', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST')}
+      </table>
+
+      ${passed
+        ? `<div style="background:#f0fdf4;border-radius:8px;padding:14px 18px;margin:20px 0 0;text-align:center;">
+             <p style="color:#166534;font-size:13px;margin:0;">🎉 Congratulations! You may now download your certificate from your dashboard.</p>
+           </div>`
+        : `<div style="background:#fef2f2;border-radius:8px;padding:14px 18px;margin:20px 0 0;text-align:center;">
+             <p style="color:#991b1b;font-size:13px;margin:0;">Keep practicing! Review your answers and try again to improve your score.</p>
+           </div>`
+      }
+
+      ${ctaButton('View Full Results', PLATFORM_URL, statusColor)}
     `;
+
     await transporter.sendMail({
-      from: getSender(),
-      to: email,
-      subject: `${icon} Quiz Result: ${status} — ${quizTitle} (${percentage}%)`,
-      html: htmlContent
+      from: getSender(), to: email,
+      subject: `${passed ? '🏆' : '📘'} Quiz Result: ${status} — ${quizTitle} (${percentage}%)`,
+      html: emailWrapper(body)
     });
+
     console.log(`✓ Quiz result email sent to ${email}`);
   } catch (err) {
     console.warn('Failed to send quiz result email:', err.message);
   }
 };
 
+// ─── 4. Forgot Password / Reset Link Email ────────────────────────────────────
+const sendPasswordResetEmail = async (email, name, resetToken) => {
+  try {
+    const transporter = await createTransporter();
+    if (!transporter) return;
+
+    const resetUrl = `${PLATFORM_URL}/?reset_token=${resetToken}`;
+
+    const body = `
+      <h2 style="color:#1e293b;font-size:22px;margin:0 0 6px;">Reset Your Password 🔑</h2>
+      <p style="color:#64748b;font-size:14px;margin:0 0 24px;">Hi <strong>${name}</strong>, we received a request to reset the password for your ${PLATFORM_NAME} account.</p>
+
+      <div style="background:${BRAND_LIGHT};border-radius:10px;padding:20px 24px;margin-bottom:24px;text-align:center;">
+        <p style="color:#3730a3;font-size:14px;font-weight:600;margin:0 0 16px;">Click the button below to set a new password:</p>
+        ${ctaButton('Reset My Password', resetUrl)}
+        <p style="color:#94a3b8;font-size:12px;margin:12px 0 0;">⏰ This link will expire in <strong>1 hour</strong> for security reasons.</p>
+      </div>
+
+      <div style="background:#fff7ed;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:20px;">
+        <p style="color:#92400e;font-size:13px;margin:0;"><strong>Didn't request this?</strong> If you did not request a password reset, please ignore this email. Your account remains secure.</p>
+      </div>
+
+      <table cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;">
+        ${infoRow('Account Email', email, '#4f46e5')}
+        ${infoRow('Request Time', new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST')}
+        ${infoRow('Link Expires In', '1 Hour')}
+      </table>
+
+      <p style="color:#94a3b8;font-size:12px;text-align:center;margin:20px 0 0;">If the button above doesn't work, copy and paste this link into your browser:<br/>
+        <a href="${resetUrl}" style="color:${BRAND_COLOR};word-break:break-all;font-size:11px;">${resetUrl}</a>
+      </p>
+    `;
+
+    await transporter.sendMail({
+      from: getSender(), to: email,
+      subject: `🔑 Password Reset Request — ${PLATFORM_NAME}`,
+      html: emailWrapper(body)
+    });
+
+    console.log(`✓ Password reset email sent to ${email}`);
+    return true;
+  } catch (err) {
+    console.warn('Failed to send password reset email:', err.message);
+    return false;
+  }
+};
+
 module.exports = {
-  sendLoginNotificationEmail,
   sendWelcomeEmail,
-  sendQuizResultEmail
+  sendLoginNotificationEmail,
+  sendQuizResultEmail,
+  sendPasswordResetEmail
 };

@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import RoleSelect from './pages/RoleSelect';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Student Pages
 import StudentDashboard from './pages/StudentDashboard';
@@ -25,8 +27,21 @@ import AdminAttempts from './pages/admin/AdminAttempts';
 
 function MainApp() {
   const { user, loading, isAdmin } = useAuth();
-  const [authMode, setAuthMode] = useState('roleselect'); // 'roleselect' | 'login' | 'register'
-  const [selectedRole, setSelectedRole] = useState(null); // 'admin' | 'student'
+  const [authMode, setAuthMode] = useState('roleselect'); // 'roleselect' | 'login' | 'register' | 'forgot' | 'reset'
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [resetToken, setResetToken] = useState(null);
+
+  // Check URL for reset_token param on load
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('reset_token');
+    if (token) {
+      setResetToken(token);
+      setAuthMode('reset');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
   
   // Navigation State
   const [activePage, setActivePage] = useState('student-dashboard');
@@ -85,6 +100,12 @@ function MainApp() {
 
   // Auth Guard
   if (!user) {
+    if (authMode === 'reset') {
+      return <ResetPassword token={resetToken} onBackToLogin={() => { setResetToken(null); setAuthMode('login'); }} />;
+    }
+    if (authMode === 'forgot') {
+      return <ForgotPassword onBack={() => setAuthMode('login')} />;
+    }
     if (authMode === 'roleselect') {
       return (
         <RoleSelect
@@ -101,6 +122,7 @@ function MainApp() {
         role={selectedRole}
         onSwitchToRegister={() => setAuthMode('register')}
         onBack={() => setAuthMode('roleselect')}
+        onForgotPassword={() => setAuthMode('forgot')}
       />
     );
   }
