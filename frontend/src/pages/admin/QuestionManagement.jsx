@@ -540,7 +540,7 @@ export default function QuestionManagement({ quizId, onBack }) {
               {/* Question Type Selection */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Question Type</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() => handleTypeChange('MCQ')}
@@ -572,7 +572,18 @@ export default function QuestionManagement({ quizId, onBack }) {
                         : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-800'
                     }`}
                   >
-                    <Type className="w-4 h-4" /> Fill in the Blank
+                    <Type className="w-4 h-4" /> Fill in Blank
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('CODING')}
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-xs font-semibold transition ${
+                      questionType === 'CODING'
+                        ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300 shadow-md'
+                        : 'bg-slate-950/40 border-slate-800 text-slate-400 hover:bg-slate-800'
+                    }`}
+                  >
+                    <Code className="w-4 h-4" /> Coding
                   </button>
                 </div>
               </div>
@@ -580,19 +591,26 @@ export default function QuestionManagement({ quizId, onBack }) {
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Question</label>
                 <textarea
-                  rows={3}
+                  rows={questionType === 'CODING' ? 4 : 3}
                   required
                   value={questionText}
                   onChange={(e) => setQuestionText(e.target.value)}
                   placeholder={
-                    questionType === 'FILL_BLANK' 
+                    questionType === 'FILL_BLANK'
                       ? 'e.g. The chemical symbol for Gold is ______.' 
                       : questionType === 'TRUE_FALSE'
                       ? 'e.g. JavaScript is a single-threaded language.'
+                      : questionType === 'CODING'
+                      ? 'e.g. Write a Python function to find the factorial of a number.'
                       : 'Which keyword is used to declare a constant in JS?'
                   }
                   className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
                 />
+                {questionType === 'CODING' && (
+                  <p className="text-[11px] text-emerald-400 mt-1.5 flex items-center gap-1">
+                    <Code className="w-3 h-3" /> Students will write their code answer in a code editor. Enter the expected solution in the answer field below.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

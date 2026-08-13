@@ -89,15 +89,48 @@ const generateQuestions = async (req, res) => {
   if (apiKey) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const prompt = `Generate exactly ${count} quiz questions about "${topic}" at ${difficulty} difficulty level.
-Question Type Requested: ${questionType} (if MIXED, create a balanced mix of MCQ, TRUE_FALSE, FILL_BLANK, and CODING programming questions).
-${language !== 'English' ? `Write the questions in ${language}.` : ''}
+      const difficultyGuide = {
+        Easy: `EASY LEVEL — Questions must be very basic and beginner-friendly:
+  - Use simple vocabulary and straightforward concepts
+  - MCQ options should be obviously distinct (no tricky distractors)
+  - TRUE_FALSE: state simple well-known facts
+  - FILL_BLANK: single common keyword answers
+  - CODING: simple one-liner code (print, basic arithmetic, variable assignment)
+  - Example Easy MCQ: "What does HTML stand for?" or "Which symbol is used for comments in Python?"`,
+
+        Intermediate: `INTERMEDIATE LEVEL — Questions must require applied knowledge:
+  - Test understanding, not just memorization
+  - MCQ distractors should be plausible but clearly wrong on analysis
+  - TRUE_FALSE: test common misconceptions or nuanced behavior
+  - FILL_BLANK: specific method names, keywords, or formula components
+  - CODING: small functions, loops, conditions, basic data structures
+  - Example Intermediate: "What is the output of: [1,2,3].map(x => x*2) in JavaScript?"`,
+
+        Hard: `HARD LEVEL — Questions must be expert-level and challenging:
+  - Test deep understanding, edge cases, and advanced concepts
+  - MCQ options should be very similar and require careful analysis to distinguish
+  - TRUE_FALSE: test subtle language quirks, edge cases, or advanced behavior
+  - FILL_BLANK: specific complex API names, algorithm outputs, or technical terms
+  - CODING: multi-step logic, recursion, algorithms, optimization, or error handling
+  - Example Hard: "What is the time complexity of QuickSort in the worst case and why?" or complex algorithmic code`
+      };
+
+      const difficultyInstruction = difficultyGuide[difficulty] || difficultyGuide['Intermediate'];
+
+      const prompt = `Generate exactly ${count} quiz questions about "${topic}".
+
+DIFFICULTY REQUIREMENT — THIS IS CRITICAL:
+${difficultyInstruction}
+
+ALL ${count} QUESTIONS MUST BE AT ${difficulty.toUpperCase()} LEVEL. Do NOT mix difficulty levels.
+
+Question Type: ${questionType} (if MIXED, create a balanced mix of MCQ, TRUE_FALSE, FILL_BLANK, and CODING)
 
 Return ONLY a valid JSON array with this exact structure (no markdown, no extra text):
 [
   {
     "question_text": "Question text here?",
-    "question_type": "MCQ", // MUST be "MCQ" or "TRUE_FALSE" or "FILL_BLANK" or "CODING"
+    "question_type": "MCQ", // MUST be one of: "MCQ", "TRUE_FALSE", "FILL_BLANK", "CODING"
     "explanation": "Brief explanation of the correct answer",
     "options": [
       { "option_text": "Option text", "is_correct": true }
