@@ -51,27 +51,35 @@ exports.getUsers = (req, res) => {
 // Toggle user status [Admin]
 exports.updateUserStatus = (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body; // 'ACTIVE' or 'INACTIVE'
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
 
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    // First check if users table has status column; if not, add it
+    try {
+      db.exec(`ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'ACTIVE'`);
+    } catch (e) { /* Column already exists, ignore */ }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: `User with id ${userId} not found` });
     }
 
     if (user.role === 'ADMIN') {
       return res.status(400).json({ message: 'Cannot deactivate Admin account' });
     }
 
-    const newStatus = status || (user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE');
-    db.prepare('UPDATE users SET status = ? WHERE id = ?').run(newStatus, id);
+    const currentStatus = user.status || 'ACTIVE';
+    const newStatus = (currentStatus === 'ACTIVE') ? 'INACTIVE' : 'ACTIVE';
+    db.prepare('UPDATE users SET status = ? WHERE id = ?').run(newStatus, userId);
 
     if (db.saveBackup) db.saveBackup();
 
     res.json({ message: `User status updated to ${newStatus}`, status: newStatus });
   } catch (error) {
-    console.error('Error updating user status:', error);
-    res.status(500).json({ message: 'Error updating user status' });
+    console.error('Error updating user status:', error.message, error.stack);
+    res.status(500).json({ message: 'Error updating user status', detail: error.message });
   }
 };
 
