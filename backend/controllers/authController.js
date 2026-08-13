@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/database');
 const { JWT_SECRET } = require('../middleware/auth');
+const { sendLoginNotificationEmail, sendWelcomeEmail } = require('../utils/emailService');
 
 // Register new student
 exports.register = (req, res) => {
@@ -25,8 +26,13 @@ exports.register = (req, res) => {
     const stmt = db.prepare('INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
     const result = stmt.run(name.trim(), email.toLowerCase().trim(), hashedPassword, 'STUDENT', 'ACTIVE');
 
+    if (db.saveBackup) db.saveBackup();
+
     const newUser = db.prepare('SELECT id, name, email, role, status, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
     const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    // Send Welcome Email asynchronously
+    sendWelcomeEmail(newUser.email, newUser.name);
 
     res.status(201).json({
       message: 'Registration successful',
@@ -72,6 +78,9 @@ exports.login = (req, res) => {
       status: user.status,
       created_at: user.created_at
     };
+
+    // Send Login Email Notification asynchronously
+    sendLoginNotificationEmail(user.email, user.name, user.role);
 
     res.json({
       message: 'Login successful',
