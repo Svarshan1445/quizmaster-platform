@@ -6,6 +6,7 @@ const { authenticateToken, requireAdmin, requireStudent } = require('../middlewa
 // Admin User Management
 router.get('/', authenticateToken, requireAdmin, userController.getUsers);
 router.patch('/:id/status', authenticateToken, requireAdmin, userController.updateUserStatus);
+router.put('/:id/status', authenticateToken, requireAdmin, userController.updateUserStatus);
 router.delete('/:id', authenticateToken, requireAdmin, userController.deleteUser);
 
 // Student Dashboard Overview

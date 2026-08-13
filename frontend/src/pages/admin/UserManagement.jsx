@@ -33,7 +33,7 @@ export default function UserManagement() {
 
   const handleToggleStatus = async (user) => {
     try {
-      await api.patch(`/users/${user.id}/status`);
+      await api.put(`/users/${user.id}/status`);
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || 'Error toggling user status');
