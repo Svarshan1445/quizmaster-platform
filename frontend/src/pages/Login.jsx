@@ -116,7 +116,7 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full mt-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {loading ? (
               <span>Signing In...</span>
@@ -128,6 +128,42 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
             )}
           </button>
         </form>
+
+        {role !== 'admin' && (
+          <div className="mt-4 space-y-4">
+            <div className="relative flex items-center justify-center">
+              <div className="border-t border-slate-800 w-full"></div>
+              <span className="bg-slate-900 px-3 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Or</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={async () => {
+                const gEmail = window.prompt("Enter your Google Account email to Sign In with Google:");
+                if (!gEmail) return;
+                setLoading(true);
+                try {
+                  const res = await api.post('/auth/google-login', { email: gEmail, name: gEmail.split('@')[0] });
+                  localStorage.setItem('auth_token', res.data.token);
+                  window.location.reload();
+                } catch (err) {
+                  alert(err.response?.data?.message || 'Google Auth Failed');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.37 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 text-center text-xs text-slate-400">
           Don't have an account?{' '}

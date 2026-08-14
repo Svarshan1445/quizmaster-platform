@@ -15,6 +15,8 @@ const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const badgeRoutes = require('./routes/badgeRoutes');
+const bookmarkRoutes = require('./routes/bookmarkRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -39,6 +41,8 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/badges', badgeRoutes);
+app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

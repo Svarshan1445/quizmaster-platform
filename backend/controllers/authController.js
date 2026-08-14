@@ -206,3 +206,63 @@ exports.testEmail = async (req, res) => {
     });
   }
 };
+
+// Google One-Click Auth Login & Register [Student]
+exports.googleLogin = async (req, res) => {
+  try {
+    const { email, name } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Google email is required' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
+
+    if (!user) {
+      // Auto-register new student with Google account
+      const randomPassword = bcrypt.hashSync(`google_${Date.now()}_${Math.random()}`, 10);
+      const studentName = name || cleanEmail.split('@')[0];
+
+      const result = db.prepare(`
+        INSERT INTO users (name, email, password, role, status)
+        VALUES (?, ?, ?, 'STUDENT', 'ACTIVE')
+      `).run(studentName, cleanEmail, randomPassword);
+
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+
+      // Send welcome email in background
+      try {
+        const { sendWelcomeEmail } = require('../utils/emailService');
+        sendWelcomeEmail(cleanEmail, studentName);
+      } catch (e) {}
+    }
+
+    if (user.status === 'INACTIVE') {
+      return res.status(403).json({ message: 'Your student account has been deactivated. Please contact support.' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'quizmaster_super_secret_2024',
+      { expiresIn: '7d' }
+    );
+
+    if (db.saveBackup) db.saveBackup();
+
+    res.json({
+      message: 'Google login successful',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+        created_at: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Google login error:', error);
+    res.status(500).json({ message: 'Error processing Google authentication' });
+  }
+};

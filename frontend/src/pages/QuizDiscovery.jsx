@@ -5,6 +5,8 @@ import {
   ChevronRight, Sparkles, CheckCircle2, AlertCircle, Play 
 } from 'lucide-react';
 
+import BookmarkIcon from 'lucide-react/dist/esm/icons/bookmark';
+
 export default function QuizDiscovery({ onStartQuiz }) {
   const [quizzes, setQuizzes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -12,9 +14,18 @@ export default function QuizDiscovery({ onStartQuiz }) {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
   const [loading, setLoading] = useState(true);
+  const [bookmarkedIds, setBookmarkedIds] = useState([]);
+  const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
 
   // Quiz Detail Modal state
   const [activeQuizModal, setActiveQuizModal] = useState(null);
+
+  const fetchBookmarks = async () => {
+    try {
+      const res = await api.get('/bookmarks/my-bookmarks');
+      setBookmarkedIds(res.data.bookmarked_ids || []);
+    } catch (err) {}
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -31,6 +42,7 @@ export default function QuizDiscovery({ onStartQuiz }) {
       ]);
       setQuizzes(qRes.data);
       setCategories(cRes.data);
+      fetchBookmarks();
     } catch (err) {
       console.error('Error loading quiz catalog:', err);
     } finally {
@@ -41,6 +53,18 @@ export default function QuizDiscovery({ onStartQuiz }) {
   useEffect(() => {
     fetchData();
   }, [search, selectedCategory, selectedDifficulty]);
+
+  const handleToggleBookmark = async (e, quizId) => {
+    e.stopPropagation();
+    try {
+      const res = await api.post('/bookmarks/toggle', { quizId });
+      if (res.data.bookmarked) {
+        setBookmarkedIds(prev => [...prev, quizId]);
+      } else {
+        setBookmarkedIds(prev => prev.filter(id => id !== quizId));
+      }
+    } catch (err) {}
+  };
 
   const handleOpenDetails = async (quizId) => {
     try {
@@ -186,18 +210,32 @@ export default function QuizDiscovery({ onStartQuiz }) {
               className="glass-card rounded-3xl border border-slate-800 hover:border-indigo-500/40 transition-all duration-300 p-6 flex flex-col justify-between group shadow-xl hover:-translate-y-1"
             >
               <div>
-                {/* Header Tag */}
+                {/* Header Tag & Bookmark Toggle */}
                 <div className="flex items-center justify-between mb-4">
                   <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
                     {quiz.category_name || 'General'}
                   </span>
-                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md ${
-                    quiz.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
-                    quiz.difficulty === 'Hard' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' :
-                    'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                  }`}>
-                    {quiz.difficulty}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleBookmark(e, quiz.id)}
+                      className={`p-1.5 rounded-lg border transition ${
+                        bookmarkedIds.includes(quiz.id)
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                          : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'
+                      }`}
+                      title={bookmarkedIds.includes(quiz.id) ? 'Remove Bookmark' : 'Bookmark Quiz'}
+                    >
+                      <BookmarkIcon className="w-3.5 h-3.5" />
+                    </button>
+                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md ${
+                      quiz.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
+                      quiz.difficulty === 'Hard' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' :
+                      'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {quiz.difficulty}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Title & Description */}
