@@ -20,7 +20,17 @@ const getSender = () => process.env.EMAIL_USER
 const dispatchEmail = async ({ to, subject, html }) => {
   const senderEmail = process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : 'noreply@quizmaster.com';
 
-  // Method 1: Resend HTTP REST API (Port 443 HTTPS)
+  // Method 1: Brevo HTTP REST API (Port 443 HTTPS - Allows sending to ANY student email address without domain restriction)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      return await sendViaBrevoApi({ to, subject, html, senderEmail });
+    } catch (e) {
+      console.warn('Brevo HTTP API error:', e.message);
+      if (process.env.DEBUG_EMAIL) throw e;
+    }
+  }
+
+  // Method 2: Resend HTTP REST API (Port 443 HTTPS)
   if (process.env.RESEND_API_KEY) {
     try {
       return await sendViaResendApi({ to, subject, html, from: 'QuizMaster <onboarding@resend.dev>' });
@@ -28,15 +38,6 @@ const dispatchEmail = async ({ to, subject, html }) => {
       console.error('Resend HTTP API error:', e.message);
       if (process.env.DEBUG_EMAIL) throw e;
       return { error: e.message };
-    }
-  }
-
-  // Method 2: Brevo HTTP REST API (Port 443 HTTPS)
-  if (process.env.BREVO_API_KEY) {
-    try {
-      return await sendViaBrevoApi({ to, subject, html, senderEmail });
-    } catch (e) {
-      console.warn('Brevo HTTP API failed:', e.message);
     }
   }
 
