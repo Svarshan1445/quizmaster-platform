@@ -33,7 +33,7 @@ function authenticateToken(req, res, next) {
 
 // Middleware for Admin role authorization
 function requireAdmin(req, res, next) {
-  if (req.user && req.user.role === 'ADMIN') {
+  if (req.user && req.user.role && req.user.role.toUpperCase() === 'ADMIN') {
     next();
   } else {
     res.status(403).json({ message: 'Access denied: Admin privileges required' });
