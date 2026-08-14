@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const certificateController = require('../controllers/certificateController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { authenticateToken } = require('../middleware/auth');
 
 // Get or Issue Certificate for an attempt (Protected)
 router.get('/attempt/:attemptId', authenticateToken, certificateController.getCertificateByAttempt);
