@@ -7,6 +7,14 @@ import { User, Lock, Save, CheckCircle, AlertCircle, Eye, EyeOff, RefreshCw, Spa
 export default function StudentProfile() {
   const { user, setUser } = useAuth();
   const [name, setName] = useState(user?.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone_number || '');
+  const [institutionName, setInstitutionName] = useState(user?.institution_name || '');
+  const [department, setDepartment] = useState(user?.department || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatar_url || 'coder');
+  const [githubUrl, setGithubUrl] = useState(user?.github_url || '');
+  const [linkedinUrl, setLinkedinUrl] = useState(user?.linkedin_url || '');
+  const [targetRole, setTargetRole] = useState(user?.target_role || '');
+
   const [profileMsg, setProfileMsg] = useState('');
   const [profileErr, setProfileErr] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
@@ -20,19 +28,51 @@ export default function StudentProfile() {
   const [pwdErr, setPwdErr] = useState('');
   const [pwdLoading, setPwdLoading] = useState(false);
 
+  const avatarPresets = [
+    { id: 'coder', emoji: '🧑‍💻', name: 'Developer Coder' },
+    { id: 'scholar', emoji: '🎓', name: 'Academic Scholar' },
+    { id: 'ninja', emoji: '🥷', name: 'Code Ninja' },
+    { id: 'scientist', emoji: '🔬', name: 'Data Scientist' },
+    { id: 'explorer', emoji: '🚀', name: 'Tech Explorer' }
+  ];
+
+  const getAvatarEmoji = (avId) => {
+    const found = avatarPresets.find(a => a.id === avId);
+    return found ? found.emoji : '🧑‍💻';
+  };
+
   useEffect(() => {
-    if (user?.name) {
-      setName(user.name);
+    if (user) {
+      setName(user.name || '');
+      setPhoneNumber(user.phone_number || '');
+      setInstitutionName(user.institution_name || '');
+      setDepartment(user.department || '');
+      setAvatarUrl(user.avatar_url || 'coder');
+      setGithubUrl(user.github_url || '');
+      setLinkedinUrl(user.linkedin_url || '');
+      setTargetRole(user.target_role || '');
     }
   }, [user]);
+
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setProfileMsg(''); setProfileErr('');
     setProfileLoading(true);
     try {
-      const res = await api.put('/users/profile', { name });
-      setProfileMsg('Profile updated successfully!');
-      if (setUser) setUser(res.data.user);
+      const res = await api.put('/users/profile', {
+        name,
+        phone_number: phoneNumber,
+        institution_name: institutionName,
+        department,
+        avatar_url: avatarUrl,
+        github_url: githubUrl,
+        linkedin_url: linkedinUrl,
+        target_role: targetRole
+      });
+      setProfileMsg('Profile and Academic details updated successfully!');
+      const updated = res.data.user;
+      sessionStorage.setItem('quiz_user', JSON.stringify(updated));
+      if (setUser) setUser(updated);
     } catch (err) {
       setProfileErr(err.response?.data?.message || 'Failed to update profile');
     } finally {
@@ -61,8 +101,6 @@ export default function StudentProfile() {
     }
   };
 
-  const getInitials = (n) => n ? n.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : '?';
-
   const [masteryData, setMasteryData] = useState([]);
   const [activeTheme, setActiveTheme] = useState(localStorage.getItem('app_theme') || 'indigo');
 
@@ -78,36 +116,49 @@ export default function StudentProfile() {
     fetchMastery();
   }, []);
 
-  const handleApplyTheme = (themeName) => {
-    document.documentElement.setAttribute('data-theme', themeName);
-    localStorage.setItem('app_theme', themeName);
-    setActiveTheme(themeName);
-  };
-
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
       {/* Profile Header */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-900 border border-indigo-500/30 p-8 overflow-hidden shadow-2xl">
+      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/70 via-purple-900/50 to-slate-900 border border-indigo-500/30 p-8 overflow-hidden shadow-2xl">
         <div className="absolute -top-10 -right-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="relative z-10 flex items-center gap-6">
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-extrabold text-white shadow-lg shadow-indigo-500/30">
-            {getInitials(user?.name)}
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <div className="w-20 h-20 rounded-2xl bg-slate-950/80 border border-indigo-500/40 flex items-center justify-center text-4xl shadow-lg shrink-0">
+            {getAvatarEmoji(user?.avatar_url)}
           </div>
-          <div>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                {user?.role === 'ADMIN' ? '🛡️ Administrator' : '🎓 Student'}
+              </span>
+              {user?.target_role && (
+                <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  🎯 {user.target_role}
+                </span>
+              )}
+            </div>
             <h1 className="text-2xl font-extrabold text-white">{user?.name}</h1>
             <p className="text-sm text-slate-400">{user?.email}</p>
-            <span className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              {user?.role === 'ADMIN' ? '🛡️ Admin' : '🎓 Student'}
-            </span>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 pt-1">
+              {user?.institution_name && (
+                <span className="font-semibold text-indigo-300">🏛️ {user.institution_name}</span>
+              )}
+              {user?.department && (
+                <span className="text-slate-400">🎓 {user.department}</span>
+              )}
+              {user?.phone_number && (
+                <span className="text-slate-400">📞 {user.phone_number}</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Update Name */}
-      <div className="glass-card rounded-3xl border border-slate-800 p-6 sm:p-8 space-y-5">
+      {/* Edit Profile Form */}
+      <div className="glass-card rounded-3xl border border-slate-800 p-6 sm:p-8 space-y-6">
         <h2 className="text-base font-bold text-white flex items-center gap-2">
-          <User className="w-5 h-5 text-indigo-400" /> Edit Profile
+          <User className="w-5 h-5 text-indigo-400" /> Academic & Personal Profile
         </h2>
 
         {profileMsg && (
@@ -121,18 +172,115 @@ export default function StudentProfile() {
           </div>
         )}
 
-        <form onSubmit={handleUpdateProfile} className="space-y-4">
+        <form onSubmit={handleUpdateProfile} className="space-y-5 text-left">
+          
+          {/* Avatar Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Full Name</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Choose Profile Avatar</label>
+            <div className="grid grid-cols-5 gap-2">
+              {avatarPresets.map(av => (
+                <button
+                  key={av.id}
+                  type="button"
+                  onClick={() => setAvatarUrl(av.id)}
+                  className={`p-3 rounded-2xl border flex flex-col items-center gap-1 transition ${
+                    avatarUrl === av.id
+                      ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="text-2xl">{av.emoji}</span>
+                  <span className="text-[10px] truncate max-w-full font-semibold">{av.id}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Full Name & Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Full Name *</label>
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Your full name"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Phone Number</label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={e => setPhoneNumber(e.target.value)}
+                placeholder="+91 9876543210"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+          </div>
+
+          {/* Institution & Department */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">College / Institution Name</label>
+              <input
+                type="text"
+                value={institutionName}
+                onChange={e => setInstitutionName(e.target.value)}
+                placeholder="e.g. Anna University / PSG Tech"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Department / Branch</label>
+              <input
+                type="text"
+                value={department}
+                onChange={e => setDepartment(e.target.value)}
+                placeholder="e.g. B.E. Computer Science"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+          </div>
+
+          {/* Target Career Role Bio */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Target Career Goal / Bio</label>
             <input
               type="text"
-              required
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Your full name"
+              value={targetRole}
+              onChange={e => setTargetRole(e.target.value)}
+              placeholder="e.g. Aspiring Full-Stack Web Developer / Data Scientist"
               className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
             />
           </div>
+
+          {/* Social Links */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">GitHub Profile URL</label>
+              <input
+                type="url"
+                value={githubUrl}
+                onChange={e => setGithubUrl(e.target.value)}
+                placeholder="https://github.com/yourusername"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">LinkedIn Profile URL</label>
+              <input
+                type="url"
+                value={linkedinUrl}
+                onChange={e => setLinkedinUrl(e.target.value)}
+                placeholder="https://linkedin.com/in/yourusername"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
             <input
@@ -141,15 +289,16 @@ export default function StudentProfile() {
               disabled
               className="w-full bg-slate-950/30 border border-slate-700/40 rounded-xl px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
             />
-            <p className="text-xs text-slate-500 mt-1">Email address cannot be changed</p>
+            <p className="text-[11px] text-slate-500 mt-1">Email address is permanently locked to your account</p>
           </div>
+
           <button
             type="submit"
             disabled={profileLoading}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm transition disabled:opacity-50 shadow-lg shadow-indigo-600/20"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-sm transition disabled:opacity-50 shadow-lg shadow-indigo-600/20 cursor-pointer"
           >
             {profileLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {profileLoading ? 'Saving...' : 'Save Changes'}
+            {profileLoading ? 'Saving Profile...' : 'Save Academic Profile ✨'}
           </button>
         </form>
       </div>

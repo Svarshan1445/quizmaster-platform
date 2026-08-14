@@ -166,10 +166,10 @@ export default function StudentDashboard({ setActivePage, onSelectQuiz, onSelect
                   </a>
                 )}
                 <button
-                  onClick={() => setShowEditProfileModal(true)}
+                  onClick={() => setActivePage('profile')}
                   className="text-xs text-indigo-400 hover:text-indigo-300 underline font-semibold cursor-pointer ml-1"
                 >
-                  ✏️ Edit Academic Profile
+                  ✏️ Manage Profile & Academic Details
                 </button>
               </div>
             </div>

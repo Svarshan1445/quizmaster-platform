@@ -75,6 +75,7 @@ export default function Navbar({ activePage, setActivePage }) {
     { id: 'quiz-discovery', label: 'Browse Quizzes', icon: BookOpen },
     { id: 'history', label: 'My Attempts', icon: Award },
     { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
+    { id: 'profile', label: 'My Profile', icon: User },
     { id: 'verify-cert', label: 'Verify Certificate', icon: ShieldCheck }
   ];
 
