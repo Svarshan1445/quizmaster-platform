@@ -22,7 +22,58 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
         setSavedAccounts(JSON.parse(stored));
       }
     } catch (e) {}
+
+    // Check for Google OAuth redirect token in URL hash
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = params.get('access_token');
+      if (accessToken) {
+        setLoading(true);
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        })
+          .then(r => r.json())
+          .then(async info => {
+            if (info.email) {
+              const res = await api.post('/auth/google-login', { email: info.email, name: info.name || info.email.split('@')[0] });
+              saveAccountToDevice(info.email);
+              localStorage.setItem('auth_token', res.data.token);
+              window.history.replaceState({}, document.title, window.location.pathname);
+              window.location.reload();
+            }
+          })
+          .catch(err => console.error('OAuth userinfo error:', err))
+          .finally(() => setLoading(false));
+      }
+    }
   }, []);
+
+  const handleGoogleAuthPopup = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const clientId = '562875979363-l4laoa0hagrn28kadun6cvofn4tcfnd8.apps.googleusercontent.com';
+    const redirectUri = window.location.origin;
+
+    const googlePopupUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${clientId}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=token&` +
+      `scope=${encodeURIComponent('email profile')}&` +
+      `prompt=select_account`;
+
+    const popup = window.open(
+      googlePopupUrl,
+      'GoogleSignInPopup',
+      `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+    );
+
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      setShowGoogleModal(true);
+    }
+  };
 
   const saveAccountToDevice = (accEmail) => {
     try {
@@ -188,7 +239,7 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
 
             <button
               type="button"
-              onClick={() => setShowGoogleModal(true)}
+              onClick={handleGoogleAuthPopup}
               className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
