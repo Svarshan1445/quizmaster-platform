@@ -18,6 +18,56 @@ export default function StudentDashboard({ setActivePage, onSelectQuiz, onSelect
   const [perf, setPerf] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Profile Edit Modal State
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [profileName, setProfileName] = useState(user?.name || '');
+  const [profilePhone, setProfilePhone] = useState(user?.phone_number || '');
+  const [profileInstitution, setProfileInstitution] = useState(user?.institution_name || '');
+  const [profileDepartment, setProfileDepartment] = useState(user?.department || '');
+  const [profileAvatar, setProfileAvatar] = useState(user?.avatar_url || 'coder');
+  const [profileGithub, setProfileGithub] = useState(user?.github_url || '');
+  const [profileLinkedin, setProfileLinkedin] = useState(user?.linkedin_url || '');
+  const [profileTargetRole, setProfileTargetRole] = useState(user?.target_role || '');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const avatarPresets = [
+    { id: 'coder', emoji: '🧑‍💻', name: 'Developer Coder' },
+    { id: 'scholar', emoji: '🎓', name: 'Academic Scholar' },
+    { id: 'ninja', emoji: '🥷', name: 'Code Ninja' },
+    { id: 'scientist', emoji: '🔬', name: 'Data Scientist' },
+    { id: 'explorer', emoji: '🚀', name: 'Tech Explorer' }
+  ];
+
+  const getAvatarEmoji = (avId) => {
+    const found = avatarPresets.find(a => a.id === avId);
+    return found ? found.emoji : '🧑‍💻';
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await api.put('/users/profile', {
+        name: profileName,
+        phone_number: profilePhone,
+        institution_name: profileInstitution,
+        department: profileDepartment,
+        avatar_url: profileAvatar,
+        github_url: profileGithub,
+        linkedin_url: profileLinkedin,
+        target_role: profileTargetRole
+      });
+      const updatedUser = res.data.user;
+      sessionStorage.setItem('quiz_user', JSON.stringify(updatedUser));
+      setShowEditProfileModal(false);
+      window.location.reload();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -57,24 +107,77 @@ export default function StudentDashboard({ setActivePage, onSelectQuiz, onSelect
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* Welcome Banner */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-900 border border-indigo-500/30 p-6 sm:p-8 overflow-hidden shadow-2xl">
+      {/* Enhanced Student Profile Welcome Banner */}
+      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/70 via-purple-900/50 to-slate-900 border border-indigo-500/30 p-6 sm:p-8 overflow-hidden shadow-2xl">
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">
-              <Sparkles className="w-3.5 h-3.5" /> STUDENT DASHBOARD
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Welcome back, {user?.name}! 👋
-            </h1>
-            <p className="text-sm text-slate-300 mt-1 max-w-xl">
-              Track your quiz attempts, view score statistics, and test your knowledge across multiple categories.
-            </p>
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          
+          <div className="flex items-start gap-5">
+            {/* Avatar Badge */}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950/80 border border-indigo-500/40 flex items-center justify-center text-3xl sm:text-4xl shadow-xl shrink-0">
+              {getAvatarEmoji(user?.avatar_url)}
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  <Sparkles className="w-3 h-3" /> STUDENT PORTFOLIO
+                </span>
+                {user?.target_role && (
+                  <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    🎯 {user.target_role}
+                  </span>
+                )}
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Welcome back, {user?.name}! 👋
+              </h1>
+
+              {/* Institution & Department details */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 pt-0.5">
+                {user?.institution_name && (
+                  <span className="flex items-center gap-1 font-semibold text-indigo-300">
+                    🏛️ {user.institution_name}
+                  </span>
+                )}
+                {user?.department && (
+                  <span className="flex items-center gap-1 font-medium text-slate-400">
+                    🎓 {user.department}
+                  </span>
+                )}
+                {user?.phone_number && (
+                  <span className="flex items-center gap-1 font-medium text-slate-400">
+                    📞 {user.phone_number}
+                  </span>
+                )}
+              </div>
+
+              {/* Social Links */}
+              <div className="flex items-center gap-3 pt-2">
+                {user?.github_url && (
+                  <a href={user.github_url} target="_blank" rel="noreferrer" className="text-xs text-slate-400 hover:text-white flex items-center gap-1 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800 transition">
+                    💻 GitHub
+                  </a>
+                )}
+                {user?.linkedin_url && (
+                  <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800 transition">
+                    👔 LinkedIn
+                  </a>
+                )}
+                <button
+                  onClick={() => setShowEditProfileModal(true)}
+                  className="text-xs text-indigo-400 hover:text-indigo-300 underline font-semibold cursor-pointer ml-1"
+                >
+                  ✏️ Edit Academic Profile
+                </button>
+              </div>
+            </div>
           </div>
+
           <button
             onClick={() => setActivePage('quiz-discovery')}
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-semibold shadow-lg shadow-indigo-500/25 transition transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-semibold shadow-lg shadow-indigo-500/25 transition transform hover:-translate-y-0.5 shrink-0"
           >
             <BookOpen className="w-5 h-5" />
             <span>Explore Quizzes</span>
@@ -399,6 +502,150 @@ export default function StudentDashboard({ setActivePage, onSelectQuiz, onSelect
           </div>
         )}
       </div>
+
+      {/* Edit Profile & Academic Modal */}
+      {showEditProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white">Edit Student Academic Profile</h3>
+                <p className="text-xs text-slate-400">Update your college, avatar, bio & social profiles</p>
+              </div>
+              <button onClick={() => setShowEditProfileModal(false)} className="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs text-left">
+              
+              {/* Avatar Selector */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-2">Choose Profile Avatar</label>
+                <div className="grid grid-cols-5 gap-2">
+                  {avatarPresets.map(av => (
+                    <button
+                      key={av.id}
+                      type="button"
+                      onClick={() => setProfileAvatar(av.id)}
+                      className={`p-3 rounded-2xl border flex flex-col items-center gap-1 transition ${
+                        profileAvatar === av.id
+                          ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="text-2xl">{av.emoji}</span>
+                      <span className="text-[10px] truncate max-w-full font-semibold">{av.id}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Full Name & Phone Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={profilePhone}
+                    onChange={(e) => setProfilePhone(e.target.value)}
+                    placeholder="+91 9876543210"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Institution & Department */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">College / Institution Name</label>
+                  <input
+                    type="text"
+                    value={profileInstitution}
+                    onChange={(e) => setProfileInstitution(e.target.value)}
+                    placeholder="e.g. Anna University / PSG Tech"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Department / Branch</label>
+                  <input
+                    type="text"
+                    value={profileDepartment}
+                    onChange={(e) => setProfileDepartment(e.target.value)}
+                    placeholder="e.g. B.E. Computer Science"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Target Career Bio */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Target Career Bio / Goal</label>
+                <input
+                  type="text"
+                  value={profileTargetRole}
+                  onChange={(e) => setProfileTargetRole(e.target.value)}
+                  placeholder="e.g. Aspiring Full-Stack Web Developer / Data Scientist"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              {/* GitHub & LinkedIn URLs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">GitHub Profile URL</label>
+                  <input
+                    type="url"
+                    value={profileGithub}
+                    onChange={(e) => setProfileGithub(e.target.value)}
+                    placeholder="https://github.com/yourusername"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">LinkedIn Profile URL</label>
+                  <input
+                    type="url"
+                    value={profileLinkedin}
+                    onChange={(e) => setProfileLinkedin(e.target.value)}
+                    placeholder="https://linkedin.com/in/yourusername"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowEditProfileModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl font-semibold hover:bg-slate-700 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 cursor-pointer"
+                >
+                  {savingProfile ? 'Saving...' : 'Save Profile Changes ✨'}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

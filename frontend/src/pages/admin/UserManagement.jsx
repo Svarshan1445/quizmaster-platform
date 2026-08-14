@@ -219,10 +219,35 @@ export default function UserManagement() {
 
             <div className="space-y-3 text-xs">
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
-                <p className="text-base font-extrabold text-white">{selectedUserModal.name}</p>
-                <p className="text-slate-400">{selectedUserModal.email}</p>
-                {selectedUserModal.phone_number && <p className="text-indigo-400 font-bold">📞 {selectedUserModal.phone_number}</p>}
-                <p className="text-slate-500 text-[11px]">Joined: {new Date(selectedUserModal.created_at).toLocaleDateString()}</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl bg-slate-900 p-2 rounded-xl border border-slate-800">
+                    {selectedUserModal.avatar_url === 'scholar' ? '🎓' : selectedUserModal.avatar_url === 'ninja' ? '🥷' : selectedUserModal.avatar_url === 'scientist' ? '🔬' : selectedUserModal.avatar_url === 'explorer' ? '🚀' : '🧑‍💻'}
+                  </span>
+                  <div>
+                    <p className="text-base font-extrabold text-white">{selectedUserModal.name}</p>
+                    <p className="text-slate-400 text-xs">{selectedUserModal.email}</p>
+                  </div>
+                </div>
+
+                {selectedUserModal.institution_name && (
+                  <p className="text-indigo-300 font-semibold text-xs pt-1">🏛️ {selectedUserModal.institution_name} {selectedUserModal.department ? `(${selectedUserModal.department})` : ''}</p>
+                )}
+                {selectedUserModal.target_role && (
+                  <p className="text-emerald-400 font-bold text-xs">🎯 Goal: {selectedUserModal.target_role}</p>
+                )}
+                {selectedUserModal.phone_number && (
+                  <p className="text-slate-400 font-medium text-xs">📞 {selectedUserModal.phone_number}</p>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  {selectedUserModal.github_url && (
+                    <a href={selectedUserModal.github_url} target="_blank" rel="noreferrer" className="text-xs text-slate-300 hover:text-white bg-slate-900 px-2 py-1 rounded-md border border-slate-800">💻 GitHub</a>
+                  )}
+                  {selectedUserModal.linkedin_url && (
+                    <a href={selectedUserModal.linkedin_url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 bg-slate-900 px-2 py-1 rounded-md border border-slate-800">👔 LinkedIn</a>
+                  )}
+                </div>
+                <p className="text-slate-500 text-[11px] pt-1">Joined: {new Date(selectedUserModal.created_at).toLocaleDateString()}</p>
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center">

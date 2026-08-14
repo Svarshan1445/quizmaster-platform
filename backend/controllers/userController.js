@@ -6,7 +6,7 @@ exports.getUsers = (req, res) => {
   try {
     const { search, role, status } = req.query;
     let query = `
-      SELECT u.id, u.name, u.email, u.phone_number, u.role, u.status, u.created_at,
+      SELECT u.id, u.name, u.email, u.phone_number, u.institution_name, u.department, u.avatar_url, u.github_url, u.linkedin_url, u.target_role, u.role, u.status, u.created_at,
              COUNT(DISTINCT a.id) as total_attempts,
              AVG(a.percentage) as avg_score,
              MAX(a.percentage) as highest_score
@@ -282,12 +282,37 @@ exports.getPerformanceChart = (req, res) => {
 exports.updateProfile = (req, res) => {
   try {
     const userId = req.user.id;
-    const { name } = req.body;
+    const { name, phone_number, institution_name, department, avatar_url, github_url, linkedin_url, target_role } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ message: 'Name cannot be empty' });
     }
-    db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name.trim(), userId);
-    const updated = db.prepare('SELECT id, name, email, role, status, created_at FROM users WHERE id = ?').get(userId);
+
+    db.prepare(`
+      UPDATE users SET 
+        name = ?,
+        phone_number = ?,
+        institution_name = ?,
+        department = ?,
+        avatar_url = ?,
+        github_url = ?,
+        linkedin_url = ?,
+        target_role = ?
+      WHERE id = ?
+    `).run(
+      name.trim(),
+      phone_number ? phone_number.trim() : null,
+      institution_name ? institution_name.trim() : null,
+      department ? department.trim() : null,
+      avatar_url ? avatar_url.trim() : 'coder',
+      github_url ? github_url.trim() : null,
+      linkedin_url ? linkedin_url.trim() : null,
+      target_role ? target_role.trim() : null,
+      userId
+    );
+
+    if (db.saveBackup) db.saveBackup();
+
+    const updated = db.prepare('SELECT id, name, email, phone_number, institution_name, department, avatar_url, github_url, linkedin_url, target_role, role, status, created_at FROM users WHERE id = ?').get(userId);
     res.json({ message: 'Profile updated successfully', user: updated });
   } catch (error) {
     console.error('Error updating profile:', error);

@@ -144,6 +144,12 @@ function initDb() {
     `ALTER TABLE answers ADD COLUMN user_text_answer TEXT`,
     `ALTER TABLE attempts ADD COLUMN tab_switches INTEGER DEFAULT 0`,
     `ALTER TABLE users ADD COLUMN phone_number TEXT`,
+    `ALTER TABLE users ADD COLUMN institution_name TEXT`,
+    `ALTER TABLE users ADD COLUMN department TEXT`,
+    `ALTER TABLE users ADD COLUMN avatar_url TEXT DEFAULT 'coder'`,
+    `ALTER TABLE users ADD COLUMN github_url TEXT`,
+    `ALTER TABLE users ADD COLUMN linkedin_url TEXT`,
+    `ALTER TABLE users ADD COLUMN target_role TEXT`,
     `UPDATE attempts SET time_taken = CASE WHEN time_taken >= 19800 THEN time_taken - 19800 ELSE time_taken END WHERE time_taken >= 19800`,
     `DELETE FROM attempts WHERE completed_at IS NULL`
   ];
