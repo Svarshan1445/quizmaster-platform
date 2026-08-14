@@ -42,13 +42,14 @@ export default function UserManagement() {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user account? All student quiz history will be erased.')) return;
+  const handleDeleteUser = async (user) => {
+    if (!window.confirm(`Are you sure you want to remove student account (${user.name} - ${user.email})?\n\nDeleting will allow this student to re-register with the same email.`)) return;
     try {
-      await api.delete(`/users/${userId}`);
+      const res = await api.delete(`/users/${user.id}`);
+      alert(res.data.message || 'Student account removed successfully!');
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || 'Error deleting user');
+      alert(err.response?.data?.message || 'Error deleting user account');
     }
   };
 
@@ -168,7 +169,7 @@ export default function UserManagement() {
                       </button>
                       {u.role !== 'ADMIN' && (
                         <button
-                          onClick={() => handleDeleteUser(u.id)}
+                          onClick={() => handleDeleteUser(u)}
                           className="p-2 rounded-lg text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 transition"
                           title="Delete Account"
                         >

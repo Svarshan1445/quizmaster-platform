@@ -83,11 +83,15 @@ exports.updateUserStatus = (req, res) => {
   }
 };
 
-// Delete user [Admin]
+// Delete user account [Admin] - Removes user & all attempts so student can re-register anytime
 exports.deleteUser = (req, res) => {
   try {
-    const { id } = req.params;
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -96,12 +100,34 @@ exports.deleteUser = (req, res) => {
       return res.status(400).json({ message: 'Cannot delete Admin account' });
     }
 
-    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    // Clean deletion transaction handling foreign keys
+    const deleteTx = db.transaction(() => {
+      // 1. Delete answers for user's attempts
+      db.prepare(`
+        DELETE FROM answers WHERE attempt_id IN (
+          SELECT id FROM attempts WHERE user_id = ?
+        )
+      `).run(userId);
+
+      // 2. Delete user's attempts
+      db.prepare('DELETE FROM attempts WHERE user_id = ?').run(userId);
+
+      // 3. Delete password reset tokens
+      try {
+        db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(userId);
+      } catch (e) { /* Table might not exist yet */ }
+
+      // 4. Delete user record
+      db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    });
+
+    deleteTx();
+
     if (db.saveBackup) db.saveBackup();
-    res.json({ message: 'User deleted successfully' });
+    res.json({ message: `Student account ${user.email} deleted successfully. They can now re-register anytime.` });
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({ message: 'Error deleting user' });
+    res.status(500).json({ message: 'Error deleting user account', detail: error.message });
   }
 };
 
