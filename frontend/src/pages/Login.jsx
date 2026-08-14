@@ -163,13 +163,7 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
 
             <button
               type="button"
-              onClick={() => {
-                if (window.google && window.google.accounts && window.google.accounts.id) {
-                  window.google.accounts.id.prompt();
-                } else {
-                  setShowGoogleModal(true);
-                }
-              }}
+              onClick={() => setShowGoogleModal(true)}
               className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
