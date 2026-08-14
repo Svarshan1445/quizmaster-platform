@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Award, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, AlertCircle, ArrowLeft } from 'lucide-react';
 
