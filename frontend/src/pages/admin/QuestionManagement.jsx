@@ -834,11 +834,10 @@ export default function QuestionManagement({ quizId, onBack }) {
                       onChange={e => setAiQuestionType(e.target.value)}
                       className="w-full bg-slate-950/60 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 font-medium"
                     >
-                      <option value="MIXED">✨ Mixed (MCQ + T/F + Blank + Coding)</option>
+                      <option value="MIXED">✨ Mixed (MCQ + T/F + Fill in Blanks)</option>
                       <option value="MCQ">Multiple Choice (MCQ)</option>
                       <option value="TRUE_FALSE">True / False</option>
                       <option value="FILL_BLANK">Fill in the Blanks</option>
-                      <option value="CODING">💻 Coding / Programming</option>
                     </select>
                   </div>
                   <div>

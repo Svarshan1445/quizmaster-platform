@@ -6,18 +6,12 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
   const list = [];
   const total = Math.min(Math.max(1, parseInt(count, 10) || 5), 50);
 
-  const types = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'CODING'];
+  const types = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'];
   const isPython = normTopic.toLowerCase().includes('python');
   const isJS = normTopic.toLowerCase().includes('javascript') || normTopic.toLowerCase().includes('js');
 
   // Benchmark 1: EASY (Basic arithmetic, simple variables, 1-line syntax)
   const easyQuestions = [
-    {
-      type: 'CODING',
-      text: `Write a ${normTopic} program to add two numbers 'a' and 'b' and return their sum.`,
-      ans: isPython ? `a = 5\nb = 10\nprint(a + b)` : `function add(a, b) {\n  return a + b;\n}`,
-      exp: `Addition in ${normTopic} uses the '+' arithmetic operator to sum numbers.`
-    },
     {
       type: 'MCQ',
       text: `Which operator is used to perform addition in ${normTopic}?`,
@@ -38,12 +32,6 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
       exp: `Variables store values in memory and must be assigned/declared prior to usage.`
     },
     {
-      type: 'CODING',
-      text: `Write a code snippet in ${normTopic} to check if a number 'num' is positive (greater than 0).`,
-      ans: isPython ? `if num > 0:\n    print("Positive")` : `if (num > 0) {\n  console.log("Positive");\n}`,
-      exp: `Simple conditional 'if' statement checks if 'num > 0'.`
-    },
-    {
       type: 'MCQ',
       text: `Which symbol is used for writing single-line comments in ${normTopic}?`,
       ans: isPython ? `# (Hash symbol)` : `// (Double forward slash)`,
@@ -58,16 +46,8 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
     }
   ];
 
-  // Benchmark 2: INTERMEDIATE (String reversal without [::-1], loops, string manipulation, conditionals)
+  // Benchmark 2: INTERMEDIATE (String reversal logic, loops, string manipulation, conditionals)
   const intermediateQuestions = [
-    {
-      type: 'CODING',
-      text: `Write a ${normTopic} program to reverse a string without using the built-in shortcut [::-1].`,
-      ans: isPython 
-        ? `def reverse_string(s):\n    rev = ""\n    for char in s:\n        rev = char + rev\n    return rev`
-        : `function reverseString(str) {\n  let rev = "";\n  for (let i = str.length - 1; i >= 0; i--) {\n    rev += str[i];\n  }\n  return rev;\n}`,
-      exp: `Reversing a string manually requires iterating backward or accumulating characters in reverse loop.`
-    },
     {
       type: 'MCQ',
       text: `In ${normTopic}, what is the time complexity of reversing a string of length N using a loop?`,
@@ -88,14 +68,6 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
       exp: `String operations return a new string instance rather than mutating the original in place.`
     },
     {
-      type: 'CODING',
-      text: `Write a function in ${normTopic} to check whether a string 's' is a palindrome (reads same forward and backward).`,
-      ans: isPython
-        ? `def is_palindrome(s):\n    clean = s.lower()\n    return clean == clean[::-1]`
-        : `function isPalindrome(s) {\n  const clean = s.toLowerCase();\n  return clean === clean.split("").reverse().join("");\n}`,
-      exp: `A palindrome remains identical when reversed.`
-    },
-    {
       type: 'MCQ',
       text: `How can you iterate through each element of an array/list in ${normTopic}?`,
       ans: `Using a for loop or for-each iterator`,
@@ -106,14 +78,6 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
 
   // Benchmark 3: HARD (Find first character appearing only once, HashMaps, algorithm efficiency, optimization)
   const hardQuestions = [
-    {
-      type: 'CODING',
-      text: `Given a string in ${normTopic}, find the first character that appears only once (first non-repeating character).`,
-      ans: isPython
-        ? `def first_unique_char(s):\n    counts = {}\n    for char in s:\n        counts[char] = counts.get(char, 0) + 1\n    for char in s:\n        if counts[char] == 1:\n            return char\n    return None`
-        : `function firstUniqueChar(s) {\n  const counts = {};\n  for (let char of s) {\n    counts[char] = (counts[char] || 0) + 1;\n  }\n  for (let char of s) {\n    if (counts[char] === 1) return char;\n  }\n  return null;\n}`,
-      exp: `Finding the first non-repeating character requires building a frequency map in O(N) time and a second pass to find count === 1.`
-    },
     {
       type: 'MCQ',
       text: `What is the optimal time & space complexity for finding the first non-repeating character in a string of length N?`,
@@ -132,14 +96,6 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
       text: `A Hash Map lookup in ${normTopic} achieves O(1) average time complexity, but degrades to O(N) worst-case if all keys hash to the same bucket.`,
       isTrue: true,
       exp: `Hash collisions can degrade hash table lookups from O(1) average to O(N) linear time.`
-    },
-    {
-      type: 'CODING',
-      text: `Write an efficient function in ${normTopic} to find the length of the longest substring without repeating characters.`,
-      ans: isPython
-        ? `def length_of_longest_substring(s):\n    char_map = {}\n    max_len = start = 0\n    for i, char in enumerate(s):\n        if char in char_map and char_map[char] >= start:\n            start = char_map[char] + 1\n        char_map[char] = i\n        max_len = max(max_len, i - start + 1)\n    return max_len`
-        : `function lengthOfLongestSubstring(s) {\n  let charMap = {}, maxLen = 0, start = 0;\n  for (let i = 0; i < s.length; i++) {\n    const char = s[i];\n    if (charMap[char] >= start) start = charMap[char] + 1;\n    charMap[char] = i;\n    maxLen = Math.max(maxLen, i - start + 1);\n  }\n  return maxLen;\n}`,
-      exp: `The sliding window technique with a hash map tracks character indices in O(N) linear time.`
     }
   ];
 
@@ -147,7 +103,7 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
   const seenTexts = new Set();
 
   for (let i = 0; i < total; i++) {
-    let qType = requestedType === 'MIXED' ? types[i % 4] : requestedType;
+    let qType = requestedType === 'MIXED' ? types[i % 3] : requestedType;
     let template = bank[i % bank.length];
 
     let qText = template.text;
@@ -156,16 +112,7 @@ function generateFallbackQuestions(topic, count, difficulty, requestedType = 'MI
     }
     seenTexts.add(qText);
 
-    if (qType === 'CODING' || template.type === 'CODING') {
-      list.push({
-        question_text: qText,
-        explanation: template.exp || `Expected code solution for ${normTopic} (${difficulty} level).`,
-        difficulty,
-        marks: 3,
-        question_type: 'CODING',
-        options: [{ option_text: template.ans, is_correct: true }]
-      });
-    } else if (qType === 'TRUE_FALSE' || template.type === 'TRUE_FALSE') {
+    if (qType === 'TRUE_FALSE' || template.type === 'TRUE_FALSE') {
       const isT = template.isTrue !== undefined ? template.isTrue : (i % 2 === 0);
       list.push({
         question_text: qText,
@@ -227,10 +174,6 @@ const generateQuestions = async (req, res) => {
       const difficultyGuidelines = {
         Easy: `STRICT EASY LEVEL REQUIREMENTS (MUST BE ULTRA BASIC & BEGINNER):
 - Target Audience: Absolute beginners
-- BENCHMARK EASY CODING EXAMPLES:
-  * "Write a program to add two numbers 'a' and 'b' and print their sum."
-  * "Write a program to check if a number is positive or negative."
-  * "Write code to calculate the area of a rectangle given length and width."
 - BENCHMARK EASY MCQ EXAMPLES:
   * "Which operator is used for addition in Python?"
   * "What is the file extension for JavaScript source files?"
@@ -242,10 +185,6 @@ const generateQuestions = async (req, res) => {
 
         Intermediate: `STRICT INTERMEDIATE LEVEL REQUIREMENTS (MUST REQUIRE MODERATE LOGIC & CONTROL FLOW):
 - Target Audience: Developers with 1-2 years experience
-- BENCHMARK INTERMEDIATE CODING EXAMPLES:
-  * "Write a Python program to reverse a string without using [::-1]."
-  * "Write a function to check if a string is a palindrome."
-  * "Write code to find the second largest number in an array."
 - BENCHMARK INTERMEDIATE MCQ EXAMPLES:
   * "What is the output of [1, 2, 3].reduce((acc, curr) => acc + curr, 0)?"
   * "How does scope hoisting work with 'var' vs 'let'?"
@@ -257,10 +196,6 @@ const generateQuestions = async (req, res) => {
 
         Hard: `STRICT HARD LEVEL REQUIREMENTS (MUST BE EXPERT ALGORITHMIC & COMPLEX PROBLEMS):
 - Target Audience: Senior developers & computer science algorithms students
-- BENCHMARK HARD CODING EXAMPLES:
-  * "Given a string, find the first character that appears only once (first non-repeating character)."
-  * "Write an efficient function to find the length of the longest substring without repeating characters."
-  * "Implement a binary search algorithm on a sorted array in O(log N) time."
 - BENCHMARK HARD MCQ EXAMPLES:
   * "What is the worst-case time complexity of QuickSort and how does randomized pivot selection prevent it?"
   * "Explain the Event Loop call stack vs microtask queue vs macrotask execution order."
@@ -284,7 +219,7 @@ Do NOT generate hard questions if EASY is requested!
 FOLLOW THESE EXACT DIFFICULTY BENCHMARKS:
 ${diffInstruction}
 
-EXACT QUESTION TYPE REQUESTED: ${questionType} (if MIXED, generate a balanced distribution of MCQ, TRUE_FALSE, FILL_BLANK, and CODING programming questions).
+EXACT QUESTION TYPE REQUESTED: ${questionType} (if MIXED, generate a balanced distribution of MCQ, TRUE_FALSE, and FILL_BLANK questions only. DO NOT generate coding questions).
 
 STRICT ANTI-REPETITION MANDATE:
 - Every question must test a COMPLETELY DIFFERENT concept.
@@ -298,7 +233,7 @@ RETURN ONLY A VALID JSON ARRAY (no markdown, no extra text):
 [
   {
     "question_text": "Clear, distinct, non-repeating question text matching ${difficulty.toUpperCase()} level",
-    "question_type": "MCQ", // MUST be "MCQ" or "TRUE_FALSE" or "FILL_BLANK" or "CODING"
+    "question_type": "MCQ", // MUST be "MCQ" or "TRUE_FALSE" or "FILL_BLANK" ONLY
     "explanation": "Detailed step-by-step explanation of the correct answer",
     "options": [
       { "option_text": "Option text", "is_correct": true }
@@ -309,8 +244,7 @@ RETURN ONLY A VALID JSON ARRAY (no markdown, no extra text):
 RULES FOR OPTIONS BY TYPE:
 - MCQ: Exactly 4 options, exactly 1 option with "is_correct": true
 - TRUE_FALSE: Exactly 2 options [ { "option_text": "True", "is_correct": boolean }, { "option_text": "False", "is_correct": boolean } ]
-- FILL_BLANK: Exactly 1 option [ { "option_text": "Exact Answer Text", "is_correct": true } ]
-- CODING: Exactly 1 option [ { "option_text": "Expected Code Solution or Output", "is_correct": true } ]`;
+- FILL_BLANK: Exactly 1 option [ { "option_text": "Exact Answer Text", "is_correct": true } ]`;
 
       const modelNames = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
       let result;
@@ -344,7 +278,7 @@ RULES FOR OPTIONS BY TYPE:
             if (!normText || seen.has(normText)) continue;
             seen.add(normText);
 
-            const type = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK', 'CODING'].includes(q.question_type)
+            const type = ['MCQ', 'TRUE_FALSE', 'FILL_BLANK'].includes(q.question_type)
               ? q.question_type
               : 'MCQ';
 
@@ -358,7 +292,7 @@ RULES FOR OPTIONS BY TYPE:
                 { option_text: 'True', is_correct: true },
                 { option_text: 'False', is_correct: false }
               ];
-            } else if ((type === 'FILL_BLANK' || type === 'CODING') && opts.length < 1) {
+            } else if (type === 'FILL_BLANK' && opts.length < 1) {
               opts = [{ option_text: 'Answer', is_correct: true }];
             }
 
@@ -366,7 +300,7 @@ RULES FOR OPTIONS BY TYPE:
               question_text: q.question_text,
               explanation: q.explanation || '',
               difficulty,
-              marks: type === 'CODING' ? 3 : 2,
+              marks: 2,
               question_type: type,
               options: opts
             });
