@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { 
   Users, Search, UserCheck, UserX, Trash2, 
-  Eye, Award, ShieldCheck, RefreshCw 
+  Eye, Award, ShieldCheck, RefreshCw, Shield
 } from 'lucide-react';
 
 export default function UserManagement() {
@@ -39,6 +39,17 @@ export default function UserManagement() {
       const msg = err.response?.data?.message || 'Error toggling user status';
       const detail = err.response?.data?.detail ? `\nDetail: ${err.response.data.detail}` : '';
       alert(msg + detail);
+    }
+  };
+
+  const handleToggleRole = async (targetUser) => {
+    const actionName = targetUser.role === 'ADMIN' ? 'Demote to Student' : 'Promote to Admin';
+    if (!window.confirm(`Are you sure you want to ${actionName} for "${targetUser.name}"?`)) return;
+    try {
+      await api.put(`/users/${targetUser.id}/role`);
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error updating user role');
     }
   };
 
@@ -148,6 +159,17 @@ export default function UserManagement() {
                       {new Date(u.created_at).toLocaleDateString()}
                     </td>
                     <td className="py-4 px-4 text-right space-x-2">
+                      <button
+                        onClick={() => handleToggleRole(u)}
+                        className={`p-2 rounded-lg transition border ${
+                          u.role === 'ADMIN'
+                            ? 'text-purple-400 hover:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border-purple-500/20'
+                            : 'text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border-indigo-500/20'
+                        }`}
+                        title={u.role === 'ADMIN' ? 'Demote to Student' : 'Promote to Admin'}
+                      >
+                        <Shield className="w-4 h-4" />
+                      </button>
                       {u.role !== 'ADMIN' && (
                         <button
                           onClick={() => handleToggleStatus(u)}

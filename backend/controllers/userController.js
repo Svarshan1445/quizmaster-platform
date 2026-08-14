@@ -83,6 +83,35 @@ exports.updateUserStatus = (req, res) => {
   }
 };
 
+// Toggle user role between STUDENT and ADMIN [Admin]
+exports.toggleUserRole = (req, res) => {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.id === req.user.id) {
+      return res.status(400).json({ message: 'Cannot change your own admin role' });
+    }
+
+    const newRole = user.role === 'ADMIN' ? 'STUDENT' : 'ADMIN';
+    db.prepare('UPDATE users SET role = ? WHERE id = ?').run(newRole, userId);
+
+    if (db.saveBackup) db.saveBackup();
+
+    res.json({ message: `User role updated to ${newRole}`, role: newRole });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ message: 'Error updating user role', detail: error.message });
+  }
+};
+
 // Delete user account [Admin] - Removes user & all attempts so student can re-register anytime
 exports.deleteUser = (req, res) => {
   try {
