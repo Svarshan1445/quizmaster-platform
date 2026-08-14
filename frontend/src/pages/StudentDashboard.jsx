@@ -107,77 +107,24 @@ export default function StudentDashboard({ setActivePage, onSelectQuiz, onSelect
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
-      {/* Enhanced Student Profile Welcome Banner */}
-      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/70 via-purple-900/50 to-slate-900 border border-indigo-500/30 p-6 sm:p-8 overflow-hidden shadow-2xl">
+      {/* Clean Student Welcome Banner */}
+      <div className="relative rounded-3xl bg-gradient-to-r from-indigo-900/60 via-purple-900/40 to-slate-900 border border-indigo-500/30 p-6 sm:p-8 overflow-hidden shadow-2xl">
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          
-          <div className="flex items-start gap-5">
-            {/* Avatar Badge */}
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950/80 border border-indigo-500/40 flex items-center justify-center text-3xl sm:text-4xl shadow-xl shrink-0">
-              {getAvatarEmoji(user?.avatar_url)}
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                  <Sparkles className="w-3 h-3" /> STUDENT PORTFOLIO
-                </span>
-                {user?.target_role && (
-                  <span className="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    🎯 {user.target_role}
-                  </span>
-                )}
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome back, {user?.name}! 👋
-              </h1>
-
-              {/* Institution & Department details */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 pt-0.5">
-                {user?.institution_name && (
-                  <span className="flex items-center gap-1 font-semibold text-indigo-300">
-                    🏛️ {user.institution_name}
-                  </span>
-                )}
-                {user?.department && (
-                  <span className="flex items-center gap-1 font-medium text-slate-400">
-                    🎓 {user.department}
-                  </span>
-                )}
-                {user?.phone_number && (
-                  <span className="flex items-center gap-1 font-medium text-slate-400">
-                    📞 {user.phone_number}
-                  </span>
-                )}
-              </div>
-
-              {/* Social Links */}
-              <div className="flex items-center gap-3 pt-2">
-                {user?.github_url && (
-                  <a href={user.github_url} target="_blank" rel="noreferrer" className="text-xs text-slate-400 hover:text-white flex items-center gap-1 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800 transition">
-                    💻 GitHub
-                  </a>
-                )}
-                {user?.linkedin_url && (
-                  <a href={user.linkedin_url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-slate-950/60 px-2.5 py-1 rounded-lg border border-slate-800 transition">
-                    👔 LinkedIn
-                  </a>
-                )}
-                <button
-                  onClick={() => setActivePage('profile')}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 underline font-semibold cursor-pointer ml-1"
-                >
-                  ✏️ Manage Profile & Academic Details
-                </button>
-              </div>
-            </div>
+        <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 mb-3">
+              <Sparkles className="w-3.5 h-3.5" /> STUDENT DASHBOARD
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Welcome back, {user?.name}! 👋
+            </h1>
+            <p className="text-sm text-slate-300 mt-1 max-w-xl">
+              Track your quiz attempts, view score statistics, and test your knowledge across multiple categories.
+            </p>
           </div>
-
           <button
             onClick={() => setActivePage('quiz-discovery')}
-            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-semibold shadow-lg shadow-indigo-500/25 transition transform hover:-translate-y-0.5 shrink-0"
+            className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-semibold shadow-lg shadow-indigo-500/25 transition transform hover:-translate-y-0.5"
           >
             <BookOpen className="w-5 h-5" />
             <span>Explore Quizzes</span>
