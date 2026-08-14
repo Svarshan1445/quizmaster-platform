@@ -25,8 +25,8 @@ const dispatchEmail = async ({ to, subject, html }) => {
     try {
       return await sendViaBrevoApi({ to, subject, html, senderEmail });
     } catch (e) {
-      console.warn('Brevo HTTP API error:', e.message);
-      if (process.env.DEBUG_EMAIL) throw e;
+      console.error('Brevo HTTP API error:', e.message);
+      return { error: `Brevo Error: ${e.message}` };
     }
   }
 
