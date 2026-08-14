@@ -27,8 +27,13 @@ const createTransporter = async () => {
         rejectUnauthorized: false,
         servername: 'smtp.gmail.com'
       },
-      lookup: (hostname, options, callback) => {
-        dns.lookup(hostname, { family: 4 }, callback);
+      lookup: (hostname, opts, cb) => {
+        const callback = typeof opts === 'function' ? opts : cb;
+        dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+          if (typeof callback === 'function') {
+            callback(err, address, family);
+          }
+        });
       }
     });
   }
