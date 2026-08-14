@@ -9,6 +9,11 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Google Modal State
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleEmailInput, setGoogleEmailInput] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -22,6 +27,23 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
     }
   };
 
+  const handleGoogleSubmit = async (e) => {
+    e.preventDefault();
+    if (!googleEmailInput.trim()) return;
+    setGoogleLoading(true);
+    try {
+      const res = await api.post('/auth/google-login', {
+        email: googleEmailInput.trim(),
+        name: googleEmailInput.trim().split('@')[0]
+      });
+      localStorage.setItem('auth_token', res.data.token);
+      window.location.reload();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Google Authentication Failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   // ---- FORGOT PASSWORD FORM ----
 
@@ -59,16 +81,16 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
               ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
               : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
           }`}>
-            {role === 'admin' ? <ShieldCheck className="w-3 h-3" /> : <UserCheck className="w-3 h-3" />}
-            {role === 'admin' ? 'Admin Login' : 'Student Login'}
+            {role === 'admin' ? <ShieldCheck className="w-3.5 h-3.5 text-amber-400" /> : <UserCheck className="w-3.5 h-3.5 text-emerald-400" />}
+            <span>{role === 'admin' ? 'Administrator Authentication' : 'Student Portal Login'}</span>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'Times New Roman, serif' }}>Welcome Back</h1>
-          <p className="text-sm text-slate-400 mt-1" style={{ fontFamily: 'Times New Roman, serif' }}>Sign in to QuizMaster Assessment Platform</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight">Welcome Back</h1>
+          <p className="text-xs text-slate-400 mt-1">Sign in to access your quizzes and certificates</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-start gap-3 text-xs text-rose-300">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
@@ -83,7 +105,7 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
+                placeholder="student@example.com"
                 className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
               />
             </div>
@@ -138,20 +160,7 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
 
             <button
               type="button"
-              onClick={async () => {
-                const gEmail = window.prompt("Enter your Google Account email to Sign In with Google:");
-                if (!gEmail) return;
-                setLoading(true);
-                try {
-                  const res = await api.post('/auth/google-login', { email: gEmail, name: gEmail.split('@')[0] });
-                  localStorage.setItem('auth_token', res.data.token);
-                  window.location.reload();
-                } catch (err) {
-                  alert(err.response?.data?.message || 'Google Auth Failed');
-                } finally {
-                  setLoading(false);
-                }
-              }}
+              onClick={() => setShowGoogleModal(true)}
               className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -169,13 +178,61 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
           Don't have an account?{' '}
           <button
             onClick={onSwitchToRegister}
-            className="text-indigo-400 font-semibold hover:underline"
+            className="text-indigo-400 font-semibold hover:underline cursor-pointer"
           >
             Register Student Account
           </button>
         </div>
 
       </div>
+
+      {/* Sleek In-App Google Auth Modal */}
+      {showGoogleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-5">
+            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center mx-auto shadow-md">
+              <svg className="w-6 h-6" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.37 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">Google One-Click Sign In</h3>
+              <p className="text-xs text-slate-400 mt-1">Enter your Gmail address to sign in or create an account</p>
+            </div>
+
+            <form onSubmit={handleGoogleSubmit} className="space-y-4">
+              <input
+                type="email"
+                required
+                value={googleEmailInput}
+                onChange={(e) => setGoogleEmailInput(e.target.value)}
+                placeholder="your.email@gmail.com"
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGoogleModal(false)}
+                  className="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-xl text-xs font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={googleLoading}
+                  className="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30"
+                >
+                  {googleLoading ? 'Signing In...' : 'Continue →'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
