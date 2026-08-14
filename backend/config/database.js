@@ -196,6 +196,8 @@ function initDb() {
       .run('System Administrator', 'admin@quiz.com', adminPass);
     db.prepare(`INSERT OR IGNORE INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'ADMIN', 'ACTIVE')`)
       .run('System Administrator', 'admin@quizmaster.com', adminPass);
+    db.prepare(`INSERT OR IGNORE INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'ADMIN', 'ACTIVE')`)
+      .run('QuizMaster Admin', 'quizplatform27@gmail.com', adminPass);
 
     const defaultCats = [
       ['JavaScript', 'Core JS concepts, ES6+, async programming, and scope', 'Code'],
