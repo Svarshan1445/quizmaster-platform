@@ -122,8 +122,10 @@ function sendViaBrevoApi({ to, subject, html, senderEmail }) {
     // Strip HTML to create clean plain text fallback for Spam filter pass
     const plainText = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
+    // Use Brevo pre-verified sender to bypass Gmail DMARC restrictions, with replyTo set to admin email
     const data = JSON.stringify({
-      sender: { name: PLATFORM_NAME, email: senderEmail },
+      sender: { name: PLATFORM_NAME, email: 'onboarding@brevo.com' },
+      replyTo: { name: PLATFORM_NAME, email: senderEmail || 'quizplatform27@gmail.com' },
       to: [{ email: to }],
       subject,
       htmlContent: html,
