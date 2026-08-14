@@ -17,13 +17,15 @@ const createTransporter = async () => {
     return nodemailer.createTransport({
       host: 'smtp.gmail.com',
       port: 465,
-      secure: true, // Use SSL (port 465 is universally allowed on cloud hostings like Render)
+      secure: true, // Use SSL
+      family: 4,    // Force IPv4 (Render containers do NOT support IPv6 outbound routing, fixes ENETUNREACH)
       auth: {
         user: process.env.EMAIL_USER.trim(),
         pass: cleanPass
       },
       tls: {
-        rejectUnauthorized: false
+        rejectUnauthorized: false,
+        servername: 'smtp.gmail.com'
       }
     });
   }
