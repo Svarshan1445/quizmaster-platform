@@ -397,6 +397,7 @@ const sendPasswordResetEmail = async (email, name, resetToken) => {
 };
 
 module.exports = {
+  dispatchEmail,
   sendWelcomeEmail,
   sendLoginNotificationEmail,
   sendQuizResultEmail,

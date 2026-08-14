@@ -176,19 +176,31 @@ exports.resetPassword = (req, res) => {
 // Test Email sending endpoint for diagnostics
 exports.testEmail = async (req, res) => {
   const targetEmail = req.query.email || 'svarshan1445@gmail.com';
+  const envCheck = {
+    EMAIL_USER: process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : null,
+    EMAIL_PASS_SET: !!process.env.EMAIL_PASS,
+    RESEND_API_KEY_SET: !!process.env.RESEND_API_KEY,
+    RESEND_KEY_PREFIX: process.env.RESEND_API_KEY ? process.env.RESEND_API_KEY.trim().substring(0, 5) + '...' : null,
+    BREVO_API_KEY_SET: !!process.env.BREVO_API_KEY,
+  };
+
   try {
-    const success = await sendWelcomeEmail(targetEmail, 'Test User');
+    const { dispatchEmail } = require('../utils/emailService');
+    const result = await dispatchEmail({
+      to: targetEmail,
+      subject: '🏆 QuizMaster Test Diagnostic Email',
+      html: '<h2>QuizMaster Diagnostic Email</h2><p>If you see this, email sending works 100%!</p>'
+    });
+
     res.json({
-      message: 'Test email execution completed',
-      email_user_configured: !!process.env.EMAIL_USER,
-      email_pass_configured: !!process.env.EMAIL_PASS,
-      sender: process.env.EMAIL_USER || 'none',
-      target: targetEmail,
-      status: success ? 'SENT_SUCCESS' : 'FAILED_OR_WARNED'
+      message: 'Test email executed',
+      envCheck,
+      dispatch_result: result ? 'SUCCESS' : 'FAILED'
     });
   } catch (err) {
     res.status(500).json({
-      message: 'Test email failed',
+      message: 'Test email failed with exception',
+      envCheck,
       error: err.message,
       stack: err.stack
     });
