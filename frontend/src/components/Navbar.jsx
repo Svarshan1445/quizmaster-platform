@@ -23,20 +23,22 @@ export default function Navbar({ activePage, setActivePage }) {
   const themes = [
     { id: 'indigo', name: 'Indigo Classic', color: '#6366f1' },
     { id: 'emerald', name: 'Emerald Mint', color: '#10b981' },
-    { id: 'cyberpunk', name: 'Cyberpunk Dark', color: '#ec4899' },
-    { id: 'sunset', name: 'Sunset Orange', color: '#f97316' }
+    { id: 'violet', name: 'Royal Violet', color: '#a855f7' },
+    { id: 'rose', name: 'Rose Crimson', color: '#f43f5e' }
   ];
 
   useEffect(() => {
     const saved = localStorage.getItem('app_theme') || 'indigo';
     setCurrentTheme(saved);
     document.documentElement.setAttribute('data-theme', saved);
+    document.body.setAttribute('data-theme', saved);
   }, []);
 
   const handleThemeChange = (tId) => {
     setCurrentTheme(tId);
     localStorage.setItem('app_theme', tId);
     document.documentElement.setAttribute('data-theme', tId);
+    document.body.setAttribute('data-theme', tId);
     setThemeDropdown(false);
   };
 
