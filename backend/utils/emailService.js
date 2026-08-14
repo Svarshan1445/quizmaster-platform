@@ -17,8 +17,8 @@ const createTransporter = async () => {
     const cleanPass = process.env.EMAIL_PASS.replace(/\s/g, '');
     return nodemailer.createTransport({
       host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, // Use SSL
+      port: 587,
+      secure: false, // STARTTLS (Port 587 is allowed on Render cloud containers)
       auth: {
         user: process.env.EMAIL_USER.trim(),
         pass: cleanPass
