@@ -13,6 +13,28 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
   const [showGoogleModal, setShowGoogleModal] = useState(false);
   const [googleEmailInput, setGoogleEmailInput] = useState('');
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [savedAccounts, setSavedAccounts] = useState([]);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('quizmaster_google_accounts');
+      if (stored) {
+        setSavedAccounts(JSON.parse(stored));
+      }
+    } catch (e) {}
+  }, []);
+
+  const saveAccountToDevice = (accEmail) => {
+    try {
+      let updated = [...savedAccounts];
+      if (!updated.includes(accEmail)) {
+        updated.unshift(accEmail);
+        if (updated.length > 5) updated = updated.slice(0, 5);
+        setSavedAccounts(updated);
+        localStorage.setItem('quizmaster_google_accounts', JSON.stringify(updated));
+      }
+    } catch (e) {}
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,15 +49,18 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
     }
   };
 
-  const handleGoogleSubmit = async (e) => {
-    e.preventDefault();
-    if (!googleEmailInput.trim()) return;
+  const handleGoogleSubmit = async (e, customEmail = null) => {
+    if (e) e.preventDefault();
+    const targetEmail = customEmail || googleEmailInput.trim();
+    if (!targetEmail) return;
+
     setGoogleLoading(true);
     try {
       const res = await api.post('/auth/google-login', {
-        email: googleEmailInput.trim(),
-        name: googleEmailInput.trim().split('@')[0]
+        email: targetEmail,
+        name: targetEmail.split('@')[0]
       });
+      saveAccountToDevice(targetEmail);
       localStorage.setItem('auth_token', res.data.token);
       window.location.reload();
     } catch (err) {
@@ -208,45 +233,37 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
               </div>
             </div>
 
-            {/* Quick Select Saved Accounts */}
-            <div className="space-y-2 text-left">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Select Google Account</p>
-              
-              {['svarshan4136@gmail.com', 'svarshan1445@gmail.com'].map(accEmail => (
-                <button
-                  key={accEmail}
-                  type="button"
-                  onClick={async () => {
-                    setGoogleLoading(true);
-                    try {
-                      const res = await api.post('/auth/google-login', { email: accEmail, name: accEmail.split('@')[0] });
-                      localStorage.setItem('auth_token', res.data.token);
-                      window.location.reload();
-                    } catch (err) {
-                      alert(err.response?.data?.message || 'Google Auth Failed');
-                    } finally {
-                      setGoogleLoading(false);
-                    }
-                  }}
-                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-xs">
-                      {accEmail[0].toUpperCase()}
+            {/* Quick Select Saved Accounts (Per-device memory) */}
+            {savedAccounts.length > 0 && (
+              <div className="space-y-2 text-left">
+                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Recent Google Accounts on this Device</p>
+                {savedAccounts.map(accEmail => (
+                  <button
+                    key={accEmail}
+                    type="button"
+                    onClick={(e) => handleGoogleSubmit(e, accEmail)}
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-xs uppercase">
+                        {accEmail[0]}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white group-hover:text-indigo-300">{accEmail.split('@')[0]}</p>
+                        <p className="text-[10px] text-slate-400">{accEmail}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-white group-hover:text-indigo-300">{accEmail.split('@')[0]}</p>
-                      <p className="text-[10px] text-slate-400">{accEmail}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">1-Tap</span>
-                </button>
-              ))}
-            </div>
+                    <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">1-Tap</span>
+                  </button>
+                ))}
+              </div>
+            )}
 
             {/* Manual Google Email Entry */}
             <form onSubmit={handleGoogleSubmit} className="space-y-3 pt-2 border-t border-slate-800 text-left">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Or Use another account</p>
+              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                {savedAccounts.length > 0 ? 'Or Sign In with another account' : 'Enter your Google Account email'}
+              </p>
               <input
                 type="email"
                 required
