@@ -38,6 +38,8 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
               const res = await api.post('/auth/google-login', { email: info.email, name: info.name || info.email.split('@')[0] });
               saveAccountToDevice(info.email);
               localStorage.setItem('auth_token', res.data.token);
+              localStorage.setItem('quiz_token', res.data.token);
+              sessionStorage.setItem('quiz_token', res.data.token);
               window.history.replaceState({}, document.title, window.location.pathname);
               window.location.reload();
             }
