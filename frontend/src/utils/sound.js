@@ -102,18 +102,31 @@ class SoundManager {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.15);
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime + idx * 0.1);
 
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime + idx * 0.15);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.15 + 0.25);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + idx * 0.1 + 0.15);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start(this.ctx.currentTime + idx * 0.15);
-        osc.stop(this.ctx.currentTime + idx * 0.15 + 0.25);
+        osc.start(this.ctx.currentTime + idx * 0.1);
+        osc.stop(this.ctx.currentTime + idx * 0.1 + 0.15);
       });
     } catch (e) {}
+  }
+
+  // Aliases for compatibility
+  playCorrect() {
+    this.playVictory();
+  }
+
+  playWrong() {
+    this.playFail();
+  }
+
+  playWarning() {
+    this.playFail();
   }
 }
 
