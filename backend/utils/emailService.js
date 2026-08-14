@@ -119,11 +119,15 @@ function sendViaResendApi({ to, subject, html, from }) {
 // Brevo HTTPS REST API Sender (Port 443)
 function sendViaBrevoApi({ to, subject, html, senderEmail }) {
   return new Promise((resolve, reject) => {
+    // Strip HTML to create clean plain text fallback for Spam filter pass
+    const plainText = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
     const data = JSON.stringify({
       sender: { name: PLATFORM_NAME, email: senderEmail },
       to: [{ email: to }],
       subject,
-      htmlContent: html
+      htmlContent: html,
+      textContent: plainText
     });
     const req = https.request({
       hostname: 'api.brevo.com',
