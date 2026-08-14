@@ -163,7 +163,30 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
 
             <button
               type="button"
-              onClick={() => setShowGoogleModal(true)}
+              onClick={() => {
+                const width = 500;
+                const height = 600;
+                const left = window.screenX + (window.outerWidth - width) / 2;
+                const top = window.screenY + (window.outerHeight - height) / 2;
+
+                const googlePopupUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                  `client_id=965158229871-quizmaster.apps.googleusercontent.com&` +
+                  `redirect_uri=${encodeURIComponent(window.location.origin)}&` +
+                  `response_type=token&` +
+                  `scope=${encodeURIComponent('email profile')}&` +
+                  `prompt=select_account`;
+
+                const popup = window.open(
+                  googlePopupUrl,
+                  'GoogleSignInPopup',
+                  `width=${width},height=${height},top=${top},left=${left},scrollbars=yes`
+                );
+
+                // Fallback to in-app modal if popup is blocked by browser
+                if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                  setShowGoogleModal(true);
+                }
+              }}
               className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
