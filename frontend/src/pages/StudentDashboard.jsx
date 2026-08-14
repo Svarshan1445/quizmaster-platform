@@ -131,7 +131,9 @@ export default function StudentDashboard({ setActivePage, onSelectQuiz, onSelect
           </div>
           <div>
             <p className="text-xs font-semibold text-amber-300 uppercase tracking-wider">Study Streak</p>
-            <p className="text-xl font-extrabold text-white mt-0.5">3 Days 🔥</p>
+            <p className="text-xl font-extrabold text-white mt-0.5">
+              {stats?.streak_days || 0} Day{stats?.streak_days === 1 ? '' : 's'} 🔥
+            </p>
           </div>
         </div>
       </div>

@@ -152,6 +152,10 @@ exports.getStudentDashboard = (req, res) => {
       JOIN quizzes q ON a.quiz_id = q.id
       LEFT JOIN categories c ON q.category_id = c.id
       WHERE a.user_id = ? AND a.completed_at IS NOT NULL
+      ORDER BY a.completed_at DESC
+      LIMIT 5
+    `).all(userId);
+
     const categoryMastery = db.prepare(`
       SELECT c.name as category_name,
              COUNT(a.id) as total_attempts,
@@ -169,7 +173,39 @@ exports.getStudentDashboard = (req, res) => {
       status: c.avg_score >= 80 ? 'Mastered' : c.avg_score >= 60 ? 'Proficient' : 'Needs Practice'
     }));
 
-    const certsCount = db.prepare('SELECT COUNT(*) as count FROM certificates WHERE user_id = ?').get(userId).count;
+    let certsCount = 0;
+    try {
+      certsCount = db.prepare('SELECT COUNT(*) as count FROM certificates WHERE user_id = ?').get(userId).count;
+    } catch (e) {}
+
+    // Dynamic study streak calculation (consecutive active days)
+    const activeDates = db.prepare(`
+      SELECT DISTINCT DATE(completed_at) as active_date
+      FROM attempts
+      WHERE user_id = ? AND completed_at IS NOT NULL
+      ORDER BY active_date DESC
+    `).all(userId).map(r => r.active_date);
+
+    let streakDays = 0;
+    if (activeDates.length > 0) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+      if (activeDates.includes(todayStr) || activeDates.includes(yesterdayStr)) {
+        let curr = new Date(activeDates.includes(todayStr) ? todayStr : yesterdayStr);
+        streakDays = 1;
+
+        while (true) {
+          curr.setDate(curr.getDate() - 1);
+          const prevStr = curr.toISOString().split('T')[0];
+          if (activeDates.includes(prevStr)) {
+            streakDays++;
+          } else {
+            break;
+          }
+        }
+      }
+    }
 
     res.json({
       total_attempts: attemptsCount,
@@ -180,7 +216,8 @@ exports.getStudentDashboard = (req, res) => {
       total_correct_answers: scoreStats.total_correct || 0,
       recent_attempts: recentAttempts,
       category_mastery: categoryMastery,
-      certificates_count: certsCount
+      certificates_count: certsCount,
+      streak_days: streakDays
     });
   } catch (error) {
     console.error('Error fetching student dashboard:', error);
