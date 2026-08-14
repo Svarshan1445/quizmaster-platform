@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const dns = require('dns');
 
 const PLATFORM_NAME = 'QuizMaster';
 const PLATFORM_URL = 'https://quizmaster-platform-iota.vercel.app';
@@ -10,7 +11,7 @@ const getSender = () => process.env.EMAIL_USER
   ? `"${PLATFORM_NAME} Platform" <${process.env.EMAIL_USER}>`
   : `"${PLATFORM_NAME} Platform" <noreply@quizmaster.com>`;
 
-// Create transporter — Gmail SMTP (explicit Port 465 SSL for cloud container compatibility) or Ethereal test
+// Create transporter — Gmail SMTP (explicit Port 465 SSL & IPv4 DNS lookup for cloud container compatibility)
 const createTransporter = async () => {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     const cleanPass = process.env.EMAIL_PASS.replace(/\s/g, '');
@@ -18,7 +19,6 @@ const createTransporter = async () => {
       host: 'smtp.gmail.com',
       port: 465,
       secure: true, // Use SSL
-      family: 4,    // Force IPv4 (Render containers do NOT support IPv6 outbound routing, fixes ENETUNREACH)
       auth: {
         user: process.env.EMAIL_USER.trim(),
         pass: cleanPass
@@ -26,6 +26,9 @@ const createTransporter = async () => {
       tls: {
         rejectUnauthorized: false,
         servername: 'smtp.gmail.com'
+      },
+      lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { family: 4 }, callback);
       }
     });
   }
