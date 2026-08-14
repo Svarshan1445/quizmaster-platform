@@ -158,9 +158,18 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
               <span className="bg-slate-900 px-3 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Or</span>
             </div>
 
+            {/* Official Google Identity Button container */}
+            <div id="googleSignInDiv" className="w-full flex justify-center"></div>
+
             <button
               type="button"
-              onClick={() => setShowGoogleModal(true)}
+              onClick={() => {
+                if (window.google && window.google.accounts && window.google.accounts.id) {
+                  window.google.accounts.id.prompt();
+                } else {
+                  setShowGoogleModal(true);
+                }
+              }}
               className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -169,7 +178,7 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
                 <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
                 <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/>
               </svg>
-              <span>Continue with Google</span>
+              <span>Sign In with Google Account</span>
             </button>
           </div>
         )}
