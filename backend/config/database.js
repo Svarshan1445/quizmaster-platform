@@ -171,8 +171,14 @@ function initDb() {
         data.options.forEach(o => stmt.run(o.id, o.question_id, o.option_text, o.is_correct));
       }
       if (data.users && data.users.length > 0) {
+        try { db.prepare('DELETE FROM users').run(); } catch (e) {}
         const stmt = db.prepare(`INSERT OR REPLACE INTO users (id, name, email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`);
         data.users.forEach(u => stmt.run(u.id, u.name, u.email, u.password, u.role, u.status, u.created_at));
+      }
+      if (data.attempts && data.attempts.length > 0) {
+        try { db.prepare('DELETE FROM attempts').run(); } catch (e) {}
+        const stmt = db.prepare(`INSERT OR REPLACE INTO attempts (id, user_id, quiz_id, score, total_marks, percentage, status, time_taken, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        data.attempts.forEach(a => stmt.run(a.id, a.user_id, a.quiz_id, a.score, a.total_marks, a.percentage, a.status, a.time_taken || 0, a.completed_at));
       }
       console.log('✓ Restored database state from backup JSON.');
     } catch (e) {
