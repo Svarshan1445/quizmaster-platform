@@ -157,8 +157,10 @@ const sendWelcomeEmail = async (email, name) => {
     }
 
     console.log(`✓ Welcome email sent to ${email}`);
+    return true;
   } catch (err) {
-    console.warn('Failed to send welcome email:', err.message);
+    console.warn('Failed to send welcome email:', err.message, err.stack);
+    throw err;
   }
 };
 

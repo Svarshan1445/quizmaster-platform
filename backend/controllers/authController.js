@@ -172,3 +172,25 @@ exports.resetPassword = (req, res) => {
     res.status(500).json({ message: 'Server error during password reset' });
   }
 };
+
+// Test Email sending endpoint for diagnostics
+exports.testEmail = async (req, res) => {
+  const targetEmail = req.query.email || 'svarshan1445@gmail.com';
+  try {
+    const success = await sendWelcomeEmail(targetEmail, 'Test User');
+    res.json({
+      message: 'Test email execution completed',
+      email_user_configured: !!process.env.EMAIL_USER,
+      email_pass_configured: !!process.env.EMAIL_PASS,
+      sender: process.env.EMAIL_USER || 'none',
+      target: targetEmail,
+      status: success ? 'SENT_SUCCESS' : 'FAILED_OR_WARNED'
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: 'Test email failed',
+      error: err.message,
+      stack: err.stack
+    });
+  }
+};
