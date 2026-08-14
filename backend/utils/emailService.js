@@ -10,13 +10,21 @@ const getSender = () => process.env.EMAIL_USER
   ? `"${PLATFORM_NAME} Platform" <${process.env.EMAIL_USER}>`
   : `"${PLATFORM_NAME} Platform" <noreply@quizmaster.com>`;
 
-// Create transporter — Gmail if env set, else Ethereal test
+// Create transporter — Gmail SMTP (explicit Port 465 SSL for cloud container compatibility) or Ethereal test
 const createTransporter = async () => {
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     const cleanPass = process.env.EMAIL_PASS.replace(/\s/g, '');
     return nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: cleanPass }
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true, // Use SSL (port 465 is universally allowed on cloud hostings like Render)
+      auth: {
+        user: process.env.EMAIL_USER.trim(),
+        pass: cleanPass
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
   }
   try {
