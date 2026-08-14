@@ -3,7 +3,7 @@
 class SoundManager {
   constructor() {
     this.ctx = null;
-    this.enabled = true;
+    this.enabled = false; // Muted completely
   }
 
   init() {
