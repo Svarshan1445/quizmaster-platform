@@ -13,6 +13,8 @@ const userRoutes = require('./routes/userRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const certificateRoutes = require('./routes/certificateRoutes');
+const badgeRoutes = require('./routes/badgeRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -35,6 +37,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', analyticsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/badges', badgeRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

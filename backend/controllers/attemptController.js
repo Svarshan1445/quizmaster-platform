@@ -203,6 +203,8 @@ exports.submitAttempt = (req, res) => {
         if (timeTakenSec < 1) timeTakenSec = 15;
       }
 
+      const tabSwitchesCount = parseInt(req.body.tab_switches, 10) || 0;
+
       db.prepare(`
         UPDATE attempts
         SET score = ?,
@@ -213,10 +215,32 @@ exports.submitAttempt = (req, res) => {
             unanswered = ?,
             total_questions = ?,
             time_taken = ?,
+            tab_switches = ?,
             status = ?,
             completed_at = CURRENT_TIMESTAMP
         WHERE id = ?
-      `).run(obtainedScore, totalPossibleMarks, percentage, correctCount, incorrectCount, unansweredCount, questions.length, timeTakenSec, status, attempt_id);
+      `).run(obtainedScore, totalPossibleMarks, percentage, correctCount, incorrectCount, unansweredCount, questions.length, timeTakenSec, tabSwitchesCount, status, attempt_id);
+
+      // Trigger automatic badge evaluation
+      try {
+        const { evaluateUserBadges } = require('./badgeController');
+        evaluateUserBadges(req.user.id);
+      } catch (e) { /* Non-critical */ }
+
+      // Generate certificate if passed
+      let certCode = null;
+      if (status === 'PASSED') {
+        try {
+          const crypto = require('crypto');
+          certCode = `QM-CERT-${crypto.createHash('md5').update(`QM-${req.user.id}-${attempt_id}-${Date.now()}`).digest('hex').substring(0, 8).toUpperCase()}`;
+          db.prepare(`
+            INSERT OR IGNORE INTO certificates (certificate_code, attempt_id, user_id)
+            VALUES (?, ?, ?)
+          `).run(certCode, attempt_id, req.user.id);
+        } catch (e) { /* Ignore */ }
+      }
+
+      if (db.saveBackup) db.saveBackup();
 
       return {
         attempt_id,

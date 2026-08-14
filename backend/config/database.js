@@ -93,6 +93,24 @@ function initDb() {
       FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE,
       FOREIGN KEY (selected_option_id) REFERENCES options(id) ON DELETE CASCADE
     );
+    CREATE TABLE IF NOT EXISTS certificates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      certificate_code TEXT UNIQUE NOT NULL,
+      attempt_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      issued_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (attempt_id) REFERENCES attempts(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS user_badges (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      badge_key TEXT NOT NULL,
+      unlocked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, badge_key),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
   `);
 
   // Safe migrations for new columns
@@ -103,6 +121,7 @@ function initDb() {
     `ALTER TABLE quizzes ADD COLUMN image_url TEXT`,
     `ALTER TABLE questions ADD COLUMN question_type TEXT DEFAULT 'MCQ'`,
     `ALTER TABLE answers ADD COLUMN user_text_answer TEXT`,
+    `ALTER TABLE attempts ADD COLUMN tab_switches INTEGER DEFAULT 0`,
     `UPDATE attempts SET time_taken = CASE WHEN time_taken >= 19800 THEN time_taken - 19800 ELSE time_taken END WHERE time_taken >= 19800`,
     `DELETE FROM attempts WHERE completed_at IS NULL`
   ];

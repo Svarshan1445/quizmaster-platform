@@ -152,9 +152,24 @@ exports.getStudentDashboard = (req, res) => {
       JOIN quizzes q ON a.quiz_id = q.id
       LEFT JOIN categories c ON q.category_id = c.id
       WHERE a.user_id = ? AND a.completed_at IS NOT NULL
-      ORDER BY a.completed_at DESC
-      LIMIT 5
-    `).all(userId);
+    const categoryMastery = db.prepare(`
+      SELECT c.name as category_name,
+             COUNT(a.id) as total_attempts,
+             AVG(a.percentage) as avg_score,
+             MAX(a.percentage) as highest_score
+      FROM attempts a
+      JOIN quizzes q ON a.quiz_id = q.id
+      LEFT JOIN categories c ON q.category_id = c.id
+      WHERE a.user_id = ? AND a.completed_at IS NOT NULL
+      GROUP BY q.category_id
+      ORDER BY avg_score ASC
+    `).all(userId).map(c => ({
+      ...c,
+      avg_score: parseFloat((c.avg_score || 0).toFixed(1)),
+      status: c.avg_score >= 80 ? 'Mastered' : c.avg_score >= 60 ? 'Proficient' : 'Needs Practice'
+    }));
+
+    const certsCount = db.prepare('SELECT COUNT(*) as count FROM certificates WHERE user_id = ?').get(userId).count;
 
     res.json({
       total_attempts: attemptsCount,
@@ -163,7 +178,9 @@ exports.getStudentDashboard = (req, res) => {
       avg_score: scoreStats.avg_score ? parseFloat(scoreStats.avg_score.toFixed(1)) : 0,
       highest_score: scoreStats.highest_score ? parseFloat(scoreStats.highest_score.toFixed(1)) : 0,
       total_correct_answers: scoreStats.total_correct || 0,
-      recent_attempts: recentAttempts
+      recent_attempts: recentAttempts,
+      category_mastery: categoryMastery,
+      certificates_count: certsCount
     });
   } catch (error) {
     console.error('Error fetching student dashboard:', error);
