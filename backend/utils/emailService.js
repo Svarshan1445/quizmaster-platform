@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const https = require('https');
 const dns = require('dns');
 
 const PLATFORM_NAME = 'QuizMaster';
@@ -6,48 +7,147 @@ const PLATFORM_URL = 'https://quizmaster-platform-iota.vercel.app';
 const BRAND_COLOR = '#4f46e5';
 const BRAND_LIGHT = '#eef2ff';
 
-// Always use authenticated Gmail as sender
+// Always use authenticated Gmail or configured email as sender
 const getSender = () => process.env.EMAIL_USER
-  ? `"${PLATFORM_NAME} Platform" <${process.env.EMAIL_USER}>`
+  ? `"${PLATFORM_NAME} Platform" <${process.env.EMAIL_USER.trim()}>`
   : `"${PLATFORM_NAME} Platform" <noreply@quizmaster.com>`;
 
-// Create transporter — Gmail SMTP (explicit Port 465 SSL & IPv4 DNS lookup for cloud container compatibility)
-const createTransporter = async () => {
+// ─── Unified Email Dispatcher ────────────────────────────────────────────────
+// Supports:
+// 1. Resend HTTP REST API (Port 443 - Never blocked on Render) if RESEND_API_KEY is set
+// 2. Brevo HTTP REST API (Port 443 - Never blocked on Render) if BREVO_API_KEY is set
+// 3. Gmail / Custom SMTP with 5-second timeout guard
+const dispatchEmail = async ({ to, subject, html }) => {
+  const senderEmail = process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : 'noreply@quizmaster.com';
+
+  // Method 1: Resend HTTP REST API (Port 443 HTTPS)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      return await sendViaResendApi({ to, subject, html, from: `${PLATFORM_NAME} <onboarding@resend.dev>` });
+    } catch (e) {
+      console.warn('Resend HTTP API failed:', e.message);
+    }
+  }
+
+  // Method 2: Brevo HTTP REST API (Port 443 HTTPS)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      return await sendViaBrevoApi({ to, subject, html, senderEmail });
+    } catch (e) {
+      console.warn('Brevo HTTP API failed:', e.message);
+    }
+  }
+
+  // Method 3: Nodemailer SMTP with 5s timeout safety
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    const cleanPass = process.env.EMAIL_PASS.replace(/\s/g, '');
-    return nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // STARTTLS (Port 587 is allowed on Render cloud containers)
-      auth: {
-        user: process.env.EMAIL_USER.trim(),
-        pass: cleanPass
-      },
-      tls: {
-        rejectUnauthorized: false,
-        servername: 'smtp.gmail.com'
-      },
-      lookup: (hostname, opts, cb) => {
-        const callback = typeof opts === 'function' ? opts : cb;
-        dns.lookup(hostname, { family: 4 }, (err, address, family) => {
-          if (typeof callback === 'function') {
-            callback(err, address, family);
-          }
-        });
-      }
-    });
+    try {
+      const cleanPass = process.env.EMAIL_PASS.replace(/\s/g, '');
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        connectionTimeout: 5000, // 5s timeout guard
+        greetingTimeout: 5000,
+        socketTimeout: 5000,
+        auth: {
+          user: senderEmail,
+          pass: cleanPass
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        lookup: (hostname, opts, cb) => {
+          const callback = typeof opts === 'function' ? opts : cb;
+          dns.lookup(hostname, { family: 4 }, (err, address, family) => {
+            if (typeof callback === 'function') callback(err, address, family);
+          });
+        }
+      });
+
+      await transporter.sendMail({
+        from: getSender(),
+        to,
+        subject,
+        html
+      });
+      console.log(`✓ Email sent via SMTP to ${to}`);
+      return true;
+    } catch (err) {
+      console.warn(`SMTP email sending to ${to} deferred:`, err.message);
+      return false; // Return false gracefully without crashing backend server
+    }
   }
-  try {
-    const testAccount = await nodemailer.createTestAccount();
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email', port: 587, secure: false,
-      auth: { user: testAccount.user, pass: testAccount.pass }
-    });
-  } catch (err) {
-    console.warn('Could not create test email account:', err.message);
-    return null;
-  }
+
+  console.warn(`No email credentials or API keys configured. Email to ${to} skipped.`);
+  return false;
 };
+
+// Resend HTTPS REST API Sender (Port 443)
+function sendViaResendApi({ to, subject, html, from }) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({ from, to: [to], subject, html });
+    const req = https.request({
+      hostname: 'api.resend.com',
+      path: '/emails',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log(`✓ Email sent via Resend HTTPS API to ${to}`);
+          resolve(true);
+        } else {
+          reject(new Error(`Resend API HTTP ${res.statusCode}: ${body}`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+// Brevo HTTPS REST API Sender (Port 443)
+function sendViaBrevoApi({ to, subject, html, senderEmail }) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({
+      sender: { name: PLATFORM_NAME, email: senderEmail },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html
+    });
+    const req = https.request({
+      hostname: 'api.brevo.com',
+      path: '/v3/smtp/email',
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY.trim(),
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data)
+      }
+    }, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          console.log(`✓ Email sent via Brevo HTTPS API to ${to}`);
+          resolve(true);
+        } else {
+          reject(new Error(`Brevo API HTTP ${res.statusCode}: ${body}`));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
 
 // ─── Shared Layout Wrapper (Internshala-inspired clean light theme) ───────────
 const emailWrapper = (bodyContent) => `
@@ -115,9 +215,6 @@ const infoRow = (label, value, valueColor = '#1e293b') =>
 // ─── 1. Welcome Email (on Register) ──────────────────────────────────────────
 const sendWelcomeEmail = async (email, name) => {
   try {
-    const transporter = await createTransporter();
-    if (!transporter) return;
-
     const body = `
       <h2 style="color:#1e293b;font-size:22px;margin:0 0 6px;">Welcome to ${PLATFORM_NAME}, ${name}! 🎓</h2>
       <p style="color:#64748b;font-size:14px;margin:0 0 24px;">Your student account has been created successfully. You're all set to start your learning journey.</p>
@@ -140,14 +237,14 @@ const sendWelcomeEmail = async (email, name) => {
       <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">If you did not create this account, please ignore this email.</p>
     `;
 
-    await transporter.sendMail({
-      from: getSender(), to: email,
+    const sent = await dispatchEmail({
+      to: email,
       subject: `🎓 Welcome to ${PLATFORM_NAME} — Account Created Successfully`,
       html: emailWrapper(body)
     });
 
     // Notify admin about new registration
-    if (process.env.EMAIL_USER && process.env.EMAIL_USER !== email) {
+    if (process.env.EMAIL_USER && process.env.EMAIL_USER.trim() !== email) {
       const adminBody = `
         <h2 style="color:#1e293b;font-size:20px;margin:0 0 6px;">New Student Registration 🆕</h2>
         <p style="color:#64748b;font-size:14px;margin:0 0 24px;">A new student has just joined the ${PLATFORM_NAME} platform.</p>
@@ -159,27 +256,23 @@ const sendWelcomeEmail = async (email, name) => {
         </table>
         ${ctaButton('View in Admin Panel', `${PLATFORM_URL}`)}
       `;
-      await transporter.sendMail({
-        from: getSender(), to: process.env.EMAIL_USER,
+      await dispatchEmail({
+        to: process.env.EMAIL_USER.trim(),
         subject: `🆕 New Student Registered: ${name}`,
         html: emailWrapper(adminBody)
       });
     }
 
-    console.log(`✓ Welcome email sent to ${email}`);
-    return true;
+    return sent;
   } catch (err) {
-    console.warn('Failed to send welcome email:', err.message, err.stack);
-    throw err;
+    console.warn('Welcome email error:', err.message);
+    return false;
   }
 };
 
 // ─── 2. Login Security Alert Email ───────────────────────────────────────────
 const sendLoginNotificationEmail = async (email, name, role = 'STUDENT') => {
   try {
-    const transporter = await createTransporter();
-    if (!transporter) return;
-
     const timeString = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
 
     const body = `
@@ -203,24 +296,20 @@ const sendLoginNotificationEmail = async (email, name, role = 'STUDENT') => {
       <p style="color:#94a3b8;font-size:12px;text-align:center;margin:16px 0 0;">Not you? Contact your administrator at <a href="mailto:${process.env.EMAIL_USER || 'admin@quizmaster.com'}" style="color:${BRAND_COLOR};">${process.env.EMAIL_USER || 'admin@quizmaster.com'}</a></p>
     `;
 
-    await transporter.sendMail({
-      from: getSender(), to: email,
+    return await dispatchEmail({
+      to: email,
       subject: `🔐 Security Alert: Successful Login to ${PLATFORM_NAME}`,
       html: emailWrapper(body)
     });
-
-    console.log(`✓ Login notification sent to ${email}`);
   } catch (err) {
-    console.warn('Failed to send login email:', err.message);
+    console.warn('Login email error:', err.message);
+    return false;
   }
 };
 
 // ─── 3. Quiz Result Email ─────────────────────────────────────────────────────
 const sendQuizResultEmail = async (email, name, quizTitle, score, percentage, status) => {
   try {
-    const transporter = await createTransporter();
-    if (!transporter) return;
-
     const passed = status === 'PASSED';
     const statusColor = passed ? '#10b981' : '#ef4444';
     const statusBg = passed ? '#f0fdf4' : '#fef2f2';
@@ -255,24 +344,20 @@ const sendQuizResultEmail = async (email, name, quizTitle, score, percentage, st
       ${ctaButton('View Full Results', PLATFORM_URL, statusColor)}
     `;
 
-    await transporter.sendMail({
-      from: getSender(), to: email,
+    return await dispatchEmail({
+      to: email,
       subject: `${passed ? '🏆' : '📘'} Quiz Result: ${status} — ${quizTitle} (${percentage}%)`,
       html: emailWrapper(body)
     });
-
-    console.log(`✓ Quiz result email sent to ${email}`);
   } catch (err) {
-    console.warn('Failed to send quiz result email:', err.message);
+    console.warn('Quiz result email error:', err.message);
+    return false;
   }
 };
 
 // ─── 4. Forgot Password / Reset Link Email ────────────────────────────────────
 const sendPasswordResetEmail = async (email, name, resetToken) => {
   try {
-    const transporter = await createTransporter();
-    if (!transporter) return;
-
     const resetUrl = `${PLATFORM_URL}/?reset_token=${resetToken}`;
 
     const body = `
@@ -300,16 +385,13 @@ const sendPasswordResetEmail = async (email, name, resetToken) => {
       </p>
     `;
 
-    await transporter.sendMail({
-      from: getSender(), to: email,
+    return await dispatchEmail({
+      to: email,
       subject: `🔑 Password Reset Request — ${PLATFORM_NAME}`,
       html: emailWrapper(body)
     });
-
-    console.log(`✓ Password reset email sent to ${email}`);
-    return true;
   } catch (err) {
-    console.warn('Failed to send password reset email:', err.message);
+    console.warn('Password reset email error:', err.message);
     return false;
   }
 };
