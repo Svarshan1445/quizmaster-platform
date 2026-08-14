@@ -100,24 +100,15 @@ exports.deleteUser = (req, res) => {
       return res.status(400).json({ message: 'Cannot delete Admin account' });
     }
 
-    // Clean deletion transaction handling foreign keys
+    // Clean deletion transaction handling foreign keys across all tables
     const deleteTx = db.transaction(() => {
-      // 1. Delete answers for user's attempts
-      db.prepare(`
-        DELETE FROM answers WHERE attempt_id IN (
-          SELECT id FROM attempts WHERE user_id = ?
-        )
-      `).run(userId);
-
-      // 2. Delete user's attempts
-      db.prepare('DELETE FROM attempts WHERE user_id = ?').run(userId);
-
-      // 3. Delete password reset tokens
-      try {
-        db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(userId);
-      } catch (e) { /* Table might not exist yet */ }
-
-      // 4. Delete user record
+      try { db.prepare('DELETE FROM answers WHERE attempt_id IN (SELECT id FROM attempts WHERE user_id = ?)').run(userId); } catch (e) {}
+      try { db.prepare('DELETE FROM attempts WHERE user_id = ?').run(userId); } catch (e) {}
+      try { db.prepare('DELETE FROM certificates WHERE user_id = ?').run(userId); } catch (e) {}
+      try { db.prepare('DELETE FROM user_badges WHERE user_id = ?').run(userId); } catch (e) {}
+      try { db.prepare('DELETE FROM bookmarks WHERE user_id = ?').run(userId); } catch (e) {}
+      try { db.prepare('DELETE FROM notifications WHERE user_id = ?').run(userId); } catch (e) {}
+      try { db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(userId); } catch (e) {}
       db.prepare('DELETE FROM users WHERE id = ?').run(userId);
     });
 

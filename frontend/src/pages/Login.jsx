@@ -173,15 +173,15 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address / Phone Number</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
             <div className="relative">
               <Mail className="w-5 h-5 text-slate-500 absolute left-3.5 top-3" />
               <input
-                type="text"
+                type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@example.com or 9876543210"
+                placeholder="student@example.com"
                 className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
               />
             </div>
