@@ -112,6 +112,7 @@ export default function UserManagement() {
                     <td className="py-4 px-4">
                       <p className="font-bold text-white">{u.name}</p>
                       <p className="text-xs text-slate-400">{u.email}</p>
+                      {u.phone_number && <p className="text-[11px] text-indigo-400 font-semibold mt-0.5">📞 {u.phone_number}</p>}
                     </td>
                     <td className="py-4 px-4 text-center">
                       <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
@@ -198,6 +199,7 @@ export default function UserManagement() {
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <p className="text-base font-extrabold text-white">{selectedUserModal.name}</p>
                 <p className="text-slate-400">{selectedUserModal.email}</p>
+                {selectedUserModal.phone_number && <p className="text-indigo-400 font-bold">📞 {selectedUserModal.phone_number}</p>}
                 <p className="text-slate-500 text-[11px]">Joined: {new Date(selectedUserModal.created_at).toLocaleDateString()}</p>
               </div>
 

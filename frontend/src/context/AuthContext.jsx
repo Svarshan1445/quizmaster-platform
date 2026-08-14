@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }) => {
     return newUser;
   };
 
-  const register = async (name, email, password) => {
-    const res = await api.post('/auth/register', { name, email, password });
+  const register = async (name, email, password, phone_number) => {
+    const res = await api.post('/auth/register', { name, email, password, phone_number });
     const { token: newToken, user: newUser } = res.data;
     sessionStorage.setItem('quiz_token', newToken);
     sessionStorage.setItem('quiz_user', JSON.stringify(newUser));

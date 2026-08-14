@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Award, User, Mail, Lock, ArrowRight, AlertCircle } from 'lucide-react';
+import { Award, User, Mail, Lock, Phone, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function Register({ onSwitchToLogin }) {
   const { register } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ export default function Register({ onSwitchToLogin }) {
     setError('');
     setLoading(true);
     try {
-      await register(name, email, password);
+      await register(name, email, password, phoneNumber);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed.');
     } finally {
@@ -74,6 +75,21 @@ export default function Register({ onSwitchToLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="rahul@example.com"
+                className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Phone Number</label>
+            <div className="relative">
+              <Phone className="w-5 h-5 text-slate-500 absolute left-3.5 top-3" />
+              <input
+                type="tel"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="+91 9876543210"
                 className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
               />
             </div>

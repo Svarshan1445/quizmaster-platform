@@ -21,28 +21,28 @@ try {
 // Register new student
 exports.register = (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, phone_number } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email, and password are required' });
+    if (!name || !email || !password || !phone_number) {
+      return res.status(400).json({ message: 'Name, email, phone number, and password are required' });
     }
 
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
-    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase());
+    const existingUser = db.prepare('SELECT id FROM users WHERE email = ?').get(email.toLowerCase().trim());
     if (existingUser) {
       return res.status(400).json({ message: 'User with this email already exists' });
     }
 
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const stmt = db.prepare('INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
-    const result = stmt.run(name.trim(), email.toLowerCase().trim(), hashedPassword, 'STUDENT', 'ACTIVE');
+    const stmt = db.prepare('INSERT INTO users (name, email, password, role, status, phone_number) VALUES (?, ?, ?, ?, ?, ?)');
+    const result = stmt.run(name.trim(), email.toLowerCase().trim(), hashedPassword, 'STUDENT', 'ACTIVE', phone_number.trim());
 
     if (db.saveBackup) db.saveBackup();
 
-    const newUser = db.prepare('SELECT id, name, email, role, status, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const newUser = db.prepare('SELECT id, name, email, phone_number, role, status, created_at FROM users WHERE id = ?').get(result.lastInsertRowid);
     const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
 
     // Send Welcome Email asynchronously
@@ -55,35 +55,44 @@ exports.register = (req, res) => {
   }
 };
 
-// Login user
+// Login user (Supports Email or Phone Number)
 exports.login = (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+      return res.status(400).json({ message: 'Email/Phone and password are required' });
     }
 
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
+    const cleanInput = email.toLowerCase().trim();
+    const user = db.prepare('SELECT * FROM users WHERE email = ? OR phone_number = ?').get(cleanInput, cleanInput);
     if (!user) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = bcrypt.compareSync(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     if (user.status === 'INACTIVE') {
       return res.status(403).json({ message: 'Your account has been deactivated. Contact admin.' });
     }
 
-    const isMatch = bcrypt.compareSync(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
-
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
-    const safeUser = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status, created_at: user.created_at };
+    const safeUser = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      phone_number: user.phone_number,
+      role: user.role,
+      status: user.status,
+      created_at: user.created_at
+    };
 
     // Send Login Email Notification asynchronously
-    sendLoginNotificationEmail(user.email, user.name, user.role);
+    try { sendLoginNotificationEmail(user.email, user.name, user.role); } catch (e) {}
 
     res.json({ message: 'Login successful', token, user: safeUser });
   } catch (error) {

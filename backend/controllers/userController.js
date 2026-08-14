@@ -6,7 +6,7 @@ exports.getUsers = (req, res) => {
   try {
     const { search, role, status } = req.query;
     let query = `
-      SELECT u.id, u.name, u.email, u.role, u.status, u.created_at,
+      SELECT u.id, u.name, u.email, u.phone_number, u.role, u.status, u.created_at,
              COUNT(DISTINCT a.id) as total_attempts,
              AVG(a.percentage) as avg_score,
              MAX(a.percentage) as highest_score
@@ -17,8 +17,8 @@ exports.getUsers = (req, res) => {
     const params = [];
 
     if (search) {
-      query += ` AND (u.name LIKE ? OR u.email LIKE ?)`;
-      params.push(`%${search}%`, `%${search}%`);
+      query += ` AND (u.name LIKE ? OR u.email LIKE ? OR u.phone_number LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     if (role) {

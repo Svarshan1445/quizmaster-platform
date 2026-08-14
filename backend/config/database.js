@@ -143,6 +143,7 @@ function initDb() {
     `ALTER TABLE questions ADD COLUMN question_type TEXT DEFAULT 'MCQ'`,
     `ALTER TABLE answers ADD COLUMN user_text_answer TEXT`,
     `ALTER TABLE attempts ADD COLUMN tab_switches INTEGER DEFAULT 0`,
+    `ALTER TABLE users ADD COLUMN phone_number TEXT`,
     `UPDATE attempts SET time_taken = CASE WHEN time_taken >= 19800 THEN time_taken - 19800 ELSE time_taken END WHERE time_taken >= 19800`,
     `DELETE FROM attempts WHERE completed_at IS NULL`
   ];

@@ -173,15 +173,15 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Email Address / Phone Number</label>
             <div className="relative">
               <Mail className="w-5 h-5 text-slate-500 absolute left-3.5 top-3" />
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="student@example.com"
+                placeholder="student@example.com or 9876543210"
                 className="w-full bg-slate-950/60 border border-slate-700/80 rounded-xl pl-11 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition"
               />
             </div>
@@ -227,32 +227,6 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
           </button>
         </form>
 
-        {role !== 'admin' && (
-          <div className="mt-4 space-y-4">
-            <div className="relative flex items-center justify-center">
-              <div className="border-t border-slate-800 w-full"></div>
-              <span className="bg-slate-900 px-3 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Or</span>
-            </div>
-
-            {/* Official Google Identity Button container */}
-            <div id="googleSignInDiv" className="w-full flex justify-center"></div>
-
-            <button
-              type="button"
-              onClick={handleGoogleAuthPopup}
-              className="w-full bg-white hover:bg-slate-100 text-slate-900 font-bold py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-md cursor-pointer"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.37 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/>
-              </svg>
-              <span>Sign In with Google Account</span>
-            </button>
-          </div>
-        )}
-
         <div className="mt-6 text-center text-xs text-slate-400">
           Don't have an account?{' '}
           <button
@@ -264,86 +238,6 @@ export default function Login({ onSwitchToRegister, onBack, role, onForgotPasswo
         </div>
 
       </div>
-
-      {/* Sleek Google Choose an Account Modal */}
-      {showGoogleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-5">
-            
-            {/* Header */}
-            <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
-              <svg className="w-6 h-6 shrink-0" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
-                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.96H1.29v3.15C3.26 21.3 7.37 24 12 24z"/>
-                <path fill="#FBBC05" d="M5.28 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.39l3.99-3.15z"/>
-                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.26 2.7 1.29 6.61l3.99 3.15c.95-2.85 3.6-4.96 6.72-4.96z"/>
-              </svg>
-              <div className="text-left">
-                <h3 className="text-base font-bold text-white leading-tight">Choose an account</h3>
-                <p className="text-[11px] text-slate-400">to continue to <span className="font-semibold text-indigo-400">QuizMaster</span></p>
-              </div>
-            </div>
-
-            {/* Quick Select Saved Accounts (Per-device memory) */}
-            {savedAccounts.length > 0 && (
-              <div className="space-y-2 text-left">
-                <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Recent Google Accounts on this Device</p>
-                {savedAccounts.map(accEmail => (
-                  <button
-                    key={accEmail}
-                    type="button"
-                    onClick={(e) => handleGoogleSubmit(e, accEmail)}
-                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 transition cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white font-bold flex items-center justify-center text-xs uppercase">
-                        {accEmail[0]}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-white group-hover:text-indigo-300">{accEmail.split('@')[0]}</p>
-                        <p className="text-[10px] text-slate-400">{accEmail}</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] text-indigo-400 font-bold bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">1-Tap</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Manual Google Email Entry */}
-            <form onSubmit={handleGoogleSubmit} className="space-y-3 pt-2 border-t border-slate-800 text-left">
-              <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                {savedAccounts.length > 0 ? 'Or Sign In with another account' : 'Enter your Google Account email'}
-              </p>
-              <input
-                type="email"
-                required
-                value={googleEmailInput}
-                onChange={(e) => setGoogleEmailInput(e.target.value)}
-                placeholder="your.email@gmail.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowGoogleModal(false)}
-                  className="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={googleLoading}
-                  className="w-1/2 bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/30 cursor-pointer"
-                >
-                  {googleLoading ? 'Signing In...' : 'Sign In →'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
