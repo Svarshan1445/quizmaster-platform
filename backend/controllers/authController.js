@@ -195,7 +195,7 @@ exports.testEmail = async (req, res) => {
     res.json({
       message: 'Test email executed',
       envCheck,
-      dispatch_result: result ? 'SUCCESS' : 'FAILED'
+      dispatch_result: result
     });
   } catch (err) {
     res.status(500).json({

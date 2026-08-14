@@ -23,9 +23,11 @@ const dispatchEmail = async ({ to, subject, html }) => {
   // Method 1: Resend HTTP REST API (Port 443 HTTPS)
   if (process.env.RESEND_API_KEY) {
     try {
-      return await sendViaResendApi({ to, subject, html, from: `${PLATFORM_NAME} <onboarding@resend.dev>` });
+      return await sendViaResendApi({ to, subject, html, from: 'QuizMaster <onboarding@resend.dev>' });
     } catch (e) {
-      console.warn('Resend HTTP API failed:', e.message);
+      console.error('Resend HTTP API error:', e.message);
+      if (process.env.DEBUG_EMAIL) throw e;
+      return { error: e.message };
     }
   }
 
